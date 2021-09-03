@@ -54,8 +54,14 @@ namespace CDBAAPI.Controllers
 
         // PUT api/<TicketsController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public void Put(int id, [FromBody] Ticket value)
         {
+            var updateTicket = _devContext.Tickets.Find(id);
+            updateTicket.Title = value.Title;
+            updateTicket.Type = value.Type;
+            updateTicket.Description = value.Description;
+
+            _devContext.SaveChanges();
         }
 
         // DELETE api/<TicketsController>/5
