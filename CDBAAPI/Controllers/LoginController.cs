@@ -26,7 +26,7 @@ namespace CDBAAPI.Controllers
             _devContext = devContext;
             _configuration = configuration;
         }
-        [HttpPost]
+
         public void SignUp(User value)
         {
             User user = new User
@@ -41,8 +41,8 @@ namespace CDBAAPI.Controllers
             _devContext.SaveChanges();
         }
 
-        [HttpGet]
-        public string Get(User value)
+        [HttpPost]
+        public string POST(User value)
         {
             var user = (from a in _devContext.Users
                         where a.Email == value.Email
@@ -51,7 +51,7 @@ namespace CDBAAPI.Controllers
 
             if(user ==null)
             {
-                return "Login failed. Please input the correct Email and password";
+                return null;
             }
 
             var claims = new List<Claim>
