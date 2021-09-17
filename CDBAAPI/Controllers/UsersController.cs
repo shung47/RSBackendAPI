@@ -43,11 +43,19 @@ namespace CDBAAPI.Controllers
         [HttpPost]
         public ActionResult<User> Post([FromBody] User value)
         {
-            _devContext.Users.Add(value);
-            _devContext.SaveChanges();
+            var users = _devContext.Users.Where(a => a.Email==value.Email);
 
-            return CreatedAtAction(nameof(Get), new { id = value.Id }, value);
+            if(users==null)
+            {
+                _devContext.Users.Add(value);
+                _devContext.SaveChanges();
 
+                return CreatedAtAction(nameof(Get), new { id = value.Id }, value);
+            }
+            else
+            {
+                return null;
+            }
         }
 
         // PUT api/<UsersController>/5

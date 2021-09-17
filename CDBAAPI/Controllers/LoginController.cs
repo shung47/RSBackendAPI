@@ -42,7 +42,7 @@ namespace CDBAAPI.Controllers
         }
 
         [HttpPost]
-        public string POST(User value)
+        public UserResponse POST(User value)
         {
             var user = (from a in _devContext.Users
                         where a.Email == value.Email
@@ -74,8 +74,16 @@ namespace CDBAAPI.Controllers
         );
             var token = new JwtSecurityTokenHandler().WriteToken(jwt);
 
-            return token;
+            UserResponse userResponse = new UserResponse();
+            userResponse.Token = token;
+            return userResponse;
         }
+
+    }
+
+    public class UserResponse
+    {
+        public string Token { get; set; }
 
     }
 }
