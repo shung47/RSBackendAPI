@@ -43,9 +43,9 @@ namespace CDBAAPI.Controllers
         [HttpPost]
         public ActionResult<User> Post([FromBody] User value)
         {
-            var users = _devContext.Users.Where(a => a.Email==value.Email);
+            var users = _devContext.Users.Where(a => a.Email==value.Email).Count();
 
-            if(users==null)
+            if(users==0)
             {
                 _devContext.Users.Add(value);
                 _devContext.SaveChanges();
