@@ -1,4 +1,5 @@
 ﻿using CDBAAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ namespace CDBAAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly DevContext _devContext;
@@ -20,28 +22,29 @@ namespace CDBAAPI.Controllers
             _devContext = devContext;
         }
         // GET: api/<UsersController>
-        [HttpGet]
-        public ActionResult<IEnumerable<User>> Get()
-        {
-            var result = _devContext.Users;
-            return result;
-        }
+        //[HttpGet]
+        //public ActionResult<IEnumerable<User>> Get()
+        //{
+        //    var result = _devContext.Users;
+        //    return result;
+        //}
 
         // GET api/<UsersController>/5
-        [HttpGet("{id}")]
-        public ActionResult<User> Get(int id)
-        {
-            var result = _devContext.Users.Find(id);
-            if(result==null)
-            {
-                return NotFound("Cannot find user");
-            }
-            return result;
-        }
+        //[HttpGet("{id}")]
+        //public ActionResult<User> Get(int id)
+        //{
+        //    var result = _devContext.Users.Find(id);
+        //    if(result==null)
+        //    {
+        //        return NotFound("Cannot find user");
+        //    }
+        //    return result;
+        //}
 
         // POST api/<UsersController>
         [HttpPost]
-        public ActionResult<User> Post([FromBody] User value)
+        [AllowAnonymous]
+        public IActionResult Post([FromBody] User value)
         {
             var users = _devContext.Users.Where(a => a.Email==value.Email).Count();
 
@@ -50,11 +53,11 @@ namespace CDBAAPI.Controllers
                 _devContext.Users.Add(value);
                 _devContext.SaveChanges();
 
-                return CreatedAtAction(nameof(Get), new { id = value.Id }, value);
+                return Ok();
             }
             else
             {
-                return null;
+                return NotFound("The account is already exist");
             }
         }
 

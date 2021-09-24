@@ -36,12 +36,19 @@ namespace CDBAAPI.Controllers
         public ActionResult<Ticket> Get(int id)
         {
             var result = _devContext.Tickets.Where(x=>x.Id == id);
-            return Ok(result);
+            if(result.Count()>0)
+            {
+                return Ok(result);
+            }
+            else
+            {
+                return NotFound();
+            }
         }
 
         // POST api/<TicketsController>
         [HttpPost]
-        public void Post([FromBody] Ticket value)
+        public IActionResult Post([FromBody] Ticket value)
         {
             Ticket ticket = new Ticket
             {
@@ -50,20 +57,38 @@ namespace CDBAAPI.Controllers
                 Description = value.Description,
                 Status = "Unassign"
             };
-            _devContext.Add(ticket);
-            _devContext.SaveChanges();
+            try
+            {
+                _devContext.Add(ticket);
+                _devContext.SaveChanges();
+                return Ok();
+            }
+            catch(Exception ex)
+            {
+                return NotFound(ex);
+            }
         }
 
         // PUT api/<TicketsController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] Ticket value)
+        public IActionResult Put(int id, [FromBody] Ticket value)
         {
-            var updateTicket = _devContext.Tickets.Find(id);
-            updateTicket.Title = value.Title;
-            updateTicket.Type = value.Type;
-            updateTicket.Description = value.Description;
+            try
+            {
+                var updateTicket = _devContext.Tickets.Find(id);
+                updateTicket.Title = value.Title;
+                updateTicket.Type = value.Type;
+                updateTicket.Description = value.Description;
 
-            _devContext.SaveChanges();
+                _devContext.SaveChanges();
+
+                return Ok();
+            }
+            catch(Exception ex)
+            {
+                return NotFound(ex);
+            }
+
         }
 
         // DELETE api/<TicketsController>/5

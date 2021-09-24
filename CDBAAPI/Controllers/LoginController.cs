@@ -27,22 +27,8 @@ namespace CDBAAPI.Controllers
             _configuration = configuration;
         }
 
-        public void SignUp(User value)
-        {
-            User user = new User
-            {
-                Email = value.Email,
-                Password =value.Password,
-                FirstName = value.FirstName,
-                LastName = value.LastName,
-                Role = value.Role
-            };
-            _devContext.Add(user);
-            _devContext.SaveChanges();
-        }
-
         [HttpPost]
-        public UserResponse POST(User value)
+        public IActionResult POST(User value)
         {
             var user = (from a in _devContext.Users
                         where a.Email == value.Email
@@ -51,7 +37,7 @@ namespace CDBAAPI.Controllers
 
             if(user ==null)
             {
-                return null;
+                return NotFound();
             }
 
             var claims = new List<Claim>
@@ -76,7 +62,7 @@ namespace CDBAAPI.Controllers
 
             UserResponse userResponse = new UserResponse();
             userResponse.Token = token;
-            return userResponse;
+            return Ok(userResponse);
         }
 
     }
