@@ -1,9 +1,13 @@
 ﻿using CDBAAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -16,11 +20,15 @@ namespace CDBAAPI.Controllers
     public class UsersController : ControllerBase
     {
         private readonly DevContext _devContext;
-        
-        public UsersController(DevContext devContext)
+        public IConfiguration Configuration { get; }
+
+        public UsersController(DevContext devContext, IConfiguration configuration)
         {
             _devContext = devContext;
+            Configuration = configuration;
         }
+        
+
         // GET: api/<UsersController>
         //[HttpGet]
         //public ActionResult<IEnumerable<User>> Get()
@@ -41,7 +49,7 @@ namespace CDBAAPI.Controllers
         //    return result;
         //}
 
-        // POST api/<UsersController>
+        // POST api/<UsersController> SignUp
         [HttpPost]
         [AllowAnonymous]
         public IActionResult Post([FromBody] User value)
@@ -50,6 +58,7 @@ namespace CDBAAPI.Controllers
 
             if(users==0)
             {
+                value.Password = EncryptString(value.Password);
                 _devContext.Users.Add(value);
                 _devContext.SaveChanges();
 
@@ -71,6 +80,30 @@ namespace CDBAAPI.Controllers
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
+        }
+
+        private string EncryptString(string plainText)
+        {
+            byte[] iv = new byte[16];
+            byte[] array;
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = Encoding.UTF8.GetBytes(Configuration["JWT:KEY"]);
+                aes.IV = iv;
+                ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+                using (MemoryStream memoryStream = new MemoryStream())
+                {
+                    using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, encryptor, CryptoStreamMode.Write))
+                    {
+                        using (StreamWriter streamWriter = new StreamWriter((Stream)cryptoStream))
+                        {
+                            streamWriter.Write(plainText);
+                        }
+                        array = memoryStream.ToArray();
+                    }
+                }
+            }
+            return Convert.ToBase64String(array);
         }
     }
 }

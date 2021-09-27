@@ -6,8 +6,10 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -32,13 +34,20 @@ namespace CDBAAPI.Controllers
         {
             var user = (from a in _devContext.Users
                         where a.Email == value.Email
-                        && a.Password == value.Password
+                        && a.Password == EncryptString(value.Password)
                         select a).SingleOrDefault();
 
-            if(user ==null)
+            if (user == null)
             {
                 return NotFound();
             }
+
+            //if (DecryptString(user.Password)!=value.Password)
+            //{
+            //    return NotFound("Incorrect Email or Password");
+            //}
+
+
 
             var claims = new List<Claim>
                 {
@@ -65,7 +74,53 @@ namespace CDBAAPI.Controllers
             return Ok(userResponse);
         }
 
+        public string DecryptString(string cipherText)
+        {
+            byte[] iv = new byte[16];
+            byte[] buffer = Convert.FromBase64String(cipherText);
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = Encoding.UTF8.GetBytes(_configuration["JWT:KEY"]);//I have already defined "Key" in the above EncryptString function
+                aes.IV = iv;
+                ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+                using (MemoryStream memoryStream = new MemoryStream(buffer))
+                {
+                    using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, decryptor, CryptoStreamMode.Read))
+                    {
+                        using (StreamReader streamReader = new StreamReader((Stream)cryptoStream))
+                        {
+                            return streamReader.ReadToEnd();
+                        }
+                    }
+                }
+            }
+        }
+
+        private string EncryptString(string plainText)
+        {
+            byte[] iv = new byte[16];
+            byte[] array;
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = Encoding.UTF8.GetBytes(_configuration["JWT:KEY"]);
+                aes.IV = iv;
+                ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+                using (MemoryStream memoryStream = new MemoryStream())
+                {
+                    using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, encryptor, CryptoStreamMode.Write))
+                    {
+                        using (StreamWriter streamWriter = new StreamWriter((Stream)cryptoStream))
+                        {
+                            streamWriter.Write(plainText);
+                        }
+                        array = memoryStream.ToArray();
+                    }
+                }
+            }
+            return Convert.ToBase64String(array);
+        }
     }
+    
 
     public class UserResponse
     {
