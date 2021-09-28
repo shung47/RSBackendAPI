@@ -10,7 +10,15 @@ namespace CDBAAPI.Models
         public int Id { get; set; }
         public string Title { get; set; }
         public string Type { get; set; }
-        public string Description { get; set; }
+        public string Assignee { get; set; }
+        public string Developer { get; set; }
+        public bool BusinessReview { get; set; }
+        public bool IsRpa { get; set; }
         public string Status { get; set; }
+        public DateTime? CreatedDateTime { get; set; }
+        public DateTime? CompletedDateTime { get; set; }
+        public DateTime? LastModificationDateTime { get; set; }
+        public string Description { get; set; }
+        public string Creator { get; set; }
     }
 }

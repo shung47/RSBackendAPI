@@ -18,6 +18,8 @@ namespace CDBAAPI.Models
         }
 
         public virtual DbSet<Ticket> Tickets { get; set; }
+        public virtual DbSet<TicketLog> TicketLogs { get; set; }
+        public virtual DbSet<TicketType> TicketTypes { get; set; }
         public virtual DbSet<User> Users { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -37,22 +39,75 @@ namespace CDBAAPI.Models
             {
                 entity.Property(e => e.Id).HasColumnName("ID");
 
+                entity.Property(e => e.Assignee)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CompletedDateTime).HasColumnType("datetime");
+
+                entity.Property(e => e.CreatedDateTime).HasColumnType("datetime");
+
+                entity.Property(e => e.Creator)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.Description)
                     .HasMaxLength(255)
                     .IsUnicode(false);
 
+                entity.Property(e => e.Developer)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.IsRpa).HasColumnName("IsRPA");
+
+                entity.Property(e => e.LastModificationDateTime).HasColumnType("datetime");
+
                 entity.Property(e => e.Status)
+                    .IsRequired()
                     .HasMaxLength(25)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Title)
                     .IsRequired()
-                    .HasMaxLength(100)
+                    .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Type)
                     .IsRequired()
                     .HasMaxLength(25)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<TicketLog>(entity =>
+            {
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.Action)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ApprovalType)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ModificationDatetime).HasColumnType("datetime");
+
+                entity.Property(e => e.TicketId).HasColumnName("TicketID");
+
+                entity.Property(e => e.UserId).HasColumnName("UserID");
+            });
+
+            modelBuilder.Entity<TicketType>(entity =>
+            {
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.SaleaderApproval).HasColumnName("SALeaderApproval");
+
+                entity.Property(e => e.TypeTitle)
+                    .IsRequired()
+                    .HasMaxLength(50)
                     .IsUnicode(false);
             });
 

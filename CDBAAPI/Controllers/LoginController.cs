@@ -51,10 +51,11 @@ namespace CDBAAPI.Controllers
 
             var claims = new List<Claim>
                 {
-                    new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                    new Claim("Email", user.Email),
                     new Claim("FirstName", user.FirstName),
                     new Claim("LastName", user.LastName),
-                    new Claim("Role", user.Role)
+                    new Claim("Role", user.Role),
+                    new Claim("Id", user.Id.ToString())
                 };
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:KEY"]));
@@ -72,28 +73,6 @@ namespace CDBAAPI.Controllers
             UserResponse userResponse = new UserResponse();
             userResponse.Token = token;
             return Ok(userResponse);
-        }
-
-        public string DecryptString(string cipherText)
-        {
-            byte[] iv = new byte[16];
-            byte[] buffer = Convert.FromBase64String(cipherText);
-            using (Aes aes = Aes.Create())
-            {
-                aes.Key = Encoding.UTF8.GetBytes(_configuration["JWT:KEY"]);//I have already defined "Key" in the above EncryptString function
-                aes.IV = iv;
-                ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-                using (MemoryStream memoryStream = new MemoryStream(buffer))
-                {
-                    using (CryptoStream cryptoStream = new CryptoStream((Stream)memoryStream, decryptor, CryptoStreamMode.Read))
-                    {
-                        using (StreamReader streamReader = new StreamReader((Stream)cryptoStream))
-                        {
-                            return streamReader.ReadToEnd();
-                        }
-                    }
-                }
-            }
         }
 
         private string EncryptString(string plainText)

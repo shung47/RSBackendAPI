@@ -51,16 +51,27 @@ namespace CDBAAPI.Controllers
             }
         }
 
-        // POST api/<TicketsController>
+        // POST api/<TicketsController> Create a new ticket
         [HttpPost]
         public IActionResult Post([FromBody] Ticket value)
         {
+            var claimsIdentity = User.Identity as ClaimsIdentity;
+
+            var email = claimsIdentity.FindFirst("Email").Value;
+
             Ticket ticket = new Ticket
             {
                 Title = value.Title,
                 Type = value.Type,
                 Description = value.Description,
-                Status = "Unassign"
+                Status = "Progressing",
+                Assignee = value.Assignee,
+                Developer = value.Developer,
+                IsRpa = value.IsRpa,
+                BusinessReview = value.BusinessReview,
+                Creator = "test",
+                CreatedDateTime = DateTime.Now,
+                LastModificationDateTime = DateTime.Now
             };
             try
             {
@@ -76,14 +87,27 @@ namespace CDBAAPI.Controllers
 
         // PUT api/<TicketsController>/5
         [HttpPut("{id}")]
-        public IActionResult Put(int id, [FromBody] Ticket value)
+        public IActionResult Put(int id, [FromBody] ReturnTicket value)
         {
+            var claimsIdentity = User.Identity as ClaimsIdentity;
+
+            var userId = claimsIdentity.FindFirst("Id").Value;
+
             try
             {
                 var updateTicket = _devContext.Tickets.Find(id);
                 updateTicket.Title = value.Title;
                 updateTicket.Type = value.Type;
                 updateTicket.Description = value.Description;
+
+                var ticketRecords = _devContext.TicketLogs.Where(t=>t.Id==id);
+
+                TicketLog ticketLog = new TicketLog
+                {
+                    UserId = int.Parse(userId),
+                    TicketId = value.Id
+
+                };
 
                 _devContext.SaveChanges();
 
@@ -101,5 +125,15 @@ namespace CDBAAPI.Controllers
         public void Delete(int id)
         {
         }
+
     }
+
+    public class ReturnTicket:Ticket
+    {
+        public string CodeApproval { get; set; }
+        public string SALeaderApproval { get; set; }
+        public string BRApproval { get; set; }
+        public string DirectorApproval { get; set; }
+    }
+
 }
