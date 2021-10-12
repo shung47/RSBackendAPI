@@ -19,6 +19,7 @@ namespace CDBAAPI.Models
         public DateTime? CompletedDateTime { get; set; }
         public DateTime? LastModificationDateTime { get; set; }
         public string Description { get; set; }
-        public string Creator { get; set; }
+        public bool IsDeleted { get; set; }
+        public int? CreatorId { get; set; }
     }
 }

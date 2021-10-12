@@ -27,12 +27,12 @@ namespace CDBAAPI.Controllers
             _devContext = devContext;
             _mapper = mapper;
         }
-        // GET: api/<TicketsController>
 
+        // GET: api/<TicketsController> Get all tickets
         [HttpGet]
         public ActionResult<IEnumerable<Ticket>> Get()
         {
-            var result = _devContext.Tickets;
+            var result = _devContext.Tickets.Where(x=>x.IsDeleted==false);
             return Ok(result);
         }
 
@@ -95,7 +95,7 @@ namespace CDBAAPI.Controllers
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
-            var email = claimsIdentity.FindFirst("Email").Value;
+            var userId = claimsIdentity.FindFirst("Id").Value;
 
             Ticket ticket = new Ticket
             {
@@ -107,9 +107,10 @@ namespace CDBAAPI.Controllers
                 Developer = value.Developer,
                 IsRpa = value.IsRpa,
                 BusinessReview = value.BusinessReview,
-                Creator = "test",
+                CreatorId = int.Parse(userId),
                 CreatedDateTime = DateTime.Now,
-                LastModificationDateTime = DateTime.Now
+                LastModificationDateTime = DateTime.Now,
+                IsDeleted = false
             };
             try
             {
@@ -159,7 +160,7 @@ namespace CDBAAPI.Controllers
                 }
                 else
                 {
-                    if (ticketlogs.Count() == 3)
+                    if (ticketlogs.Count() >= 3)
                     {
                         try
                         {
@@ -169,6 +170,13 @@ namespace CDBAAPI.Controllers
                         catch (Exception ex)
                         {
                             return NotFound(ex);
+                        }
+                    }else if(ticketlogs.Count() == 2)
+                    {
+                        if(value.BusinessReview)
+                        {
+                            UpdateTicket(Id, value);
+                            return Ok();
                         }
                     }
                     return NotFound("Can't save the ticket. Make sure it is approved by others.");
@@ -194,8 +202,22 @@ namespace CDBAAPI.Controllers
 
         // DELETE api/<TicketsController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public IActionResult Delete(int Id)
         {
+            var claimsIdentity = User.Identity as ClaimsIdentity;
+            var userId = claimsIdentity.FindFirst("Id").Value;
+            var updateTicket = _devContext.Tickets.Find(Id);
+            if (int.Parse(userId) == updateTicket.CreatorId)
+            {
+                updateTicket.IsDeleted = true;
+                _devContext.SaveChanges();
+                return Ok();
+            }
+            else
+            {
+                return NotFound("Sorry, you don't have permission to delete this ticket");
+            }
+
         }
 
         //Approve ticket
@@ -245,6 +267,8 @@ namespace CDBAAPI.Controllers
             updateTicket.Assignee = value.Assignee;
             updateTicket.Developer = value.Developer;
             updateTicket.LastModificationDateTime = DateTime.Now;
+            updateTicket.IsRpa = value.IsRpa;
+            updateTicket.BusinessReview = value.BusinessReview;
 
             if(value.Status=="Completed")
             {

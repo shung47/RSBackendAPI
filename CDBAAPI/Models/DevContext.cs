@@ -47,10 +47,6 @@ namespace CDBAAPI.Models
 
                 entity.Property(e => e.CreatedDateTime).HasColumnType("datetime");
 
-                entity.Property(e => e.Creator)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
                 entity.Property(e => e.Description)
                     .HasMaxLength(255)
                     .IsUnicode(false);
