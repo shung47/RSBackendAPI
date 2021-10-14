@@ -21,5 +21,8 @@ namespace CDBAAPI.Models
         public string Description { get; set; }
         public bool IsDeleted { get; set; }
         public int? CreatorId { get; set; }
+        public string PrimaryCodeReviewer { get; set; }
+        public string SecondaryCodeReviewer { get; set; }
+        public string BusinessReviewer { get; set; }
     }
 }

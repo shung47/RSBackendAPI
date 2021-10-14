@@ -27,15 +27,15 @@ namespace CDBAAPI.Controllers
             _devContext = devContext;
             Configuration = configuration;
         }
-        
 
-        // GET: api/<UsersController>
-        //[HttpGet]
-        //public ActionResult<IEnumerable<User>> Get()
-        //{
-        //    var result = _devContext.Users;
-        //    return result;
-        //}
+
+        //GET: api/<UsersController>
+        [HttpGet]
+        public ActionResult<IEnumerable<User>> Get()
+        {
+            var result = _devContext.Users;
+            return Ok(result);
+        }
 
         // GET api/<UsersController>/5
         //[HttpGet("{id}")]

@@ -43,6 +43,10 @@ namespace CDBAAPI.Models
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
+                entity.Property(e => e.BusinessReviewer)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.CompletedDateTime).HasColumnType("datetime");
 
                 entity.Property(e => e.CreatedDateTime).HasColumnType("datetime");
@@ -58,6 +62,14 @@ namespace CDBAAPI.Models
                 entity.Property(e => e.IsRpa).HasColumnName("IsRPA");
 
                 entity.Property(e => e.LastModificationDateTime).HasColumnType("datetime");
+
+                entity.Property(e => e.PrimaryCodeReviewer)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.SecondaryCodeReviewer)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.Status)
                     .IsRequired()

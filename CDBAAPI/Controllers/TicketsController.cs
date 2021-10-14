@@ -51,9 +51,10 @@ namespace CDBAAPI.Controllers
             if (result!=null)
             {
                 result.BusinessApproval = "Pending";
-                result.CodeApproval = "Pending";
+                result.PrimaryCodeApproval = "Pending";
                 result.DirectorApproval = "Pending";
                 result.SALeaderApproval = "Pending";
+                result.SecondaryCodeApproval = "Pending";
 
                 var records = _devContext.TicketLogs.Where(x => x.TicketId == Id);
                 if(records.Count()>0)
@@ -63,21 +64,31 @@ namespace CDBAAPI.Controllers
                         if (!record.IsDeleted && record.ApprovalType == "businessApproval")
                         {
                             result.BusinessApproval = record.Action;
+                            result.BusinessApprovalTime = record.ModificationDatetime;
                         }
 
-                        if (!record.IsDeleted && record.ApprovalType == "codeApproval")
+                        if (!record.IsDeleted && record.ApprovalType == "primaryCodeApproval")
                         {
-                            result.CodeApproval = record.Action;
+                            result.PrimaryCodeApproval = record.Action;
+                            result.PrimaryCodeApprovalTime = record.ModificationDatetime;
+                        }
+
+                        if (!record.IsDeleted && record.ApprovalType == "secondaryCodeApproval")
+                        {
+                            result.SecondaryCodeApproval = record.Action;
+                            result.SecondaryCodeApprovalTime = record.ModificationDatetime;
                         }
 
                         if (!record.IsDeleted && record.ApprovalType == "directorApproval")
                         {
                             result.DirectorApproval = record.Action;
+                            result.DirectorApprovalTime = record.ModificationDatetime;
                         }
 
                         if (!record.IsDeleted && record.ApprovalType == "saLeaderApproval")
                         {
                             result.SALeaderApproval = record.Action;
+                            result.SALeaderApprovalTime = record.ModificationDatetime;
                         }
                     }
                 }
@@ -131,7 +142,15 @@ namespace CDBAAPI.Controllers
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
             var userId = claimsIdentity.FindFirst("Id").Value;
-            if(value.Status =="Completed")
+
+            var ticket = _devContext.Tickets.Where(x => x.Id == Id).First();
+            if(ticket.Status=="Completed")
+            {
+                return NotFound("You can't modify a completed ticket");
+            }
+
+
+            if (value.Status =="Completed")
             {
 
                 var ticketlogs = _devContext.TicketLogs.Where(x => x.TicketId == Id && x.IsDeleted == false && x.Action =="Approved");
@@ -143,7 +162,18 @@ namespace CDBAAPI.Controllers
 
                 if (value.Type == "Project")
                 {
-                    if(ticketlogs.Count()==4)
+                    if(value.SecondaryCodeReviewer==null&& ticketlogs.Count() ==4)                   
+                    {
+                        try
+                        {
+                            UpdateTicket(Id, value);
+                            return Ok();
+                        }
+                        catch (Exception ex)
+                        {
+                            return NotFound(ex);
+                        }
+                    }else if (ticketlogs.Count() == 5)
                     {
                         try
                         {
@@ -155,12 +185,39 @@ namespace CDBAAPI.Controllers
                             return NotFound(ex);
                         }
                     }
+                    else
+                    {
+                        return NotFound("Can't save the ticket. Make sure it is approved by every essential person");
+                    }
 
-                    return NotFound("Can't save the ticket. Make sure it is approved by others.");
+                }
+                else if (value.Type == "Incident")
+                {
+                    if(value.BusinessReview && value.IsRpa && ticketlogs.Count() == 3)
+                    {
+                        UpdateTicket(Id, value);
+                        return Ok();
+                    }else if(!value.BusinessReview && value.IsRpa && ticketlogs.Count() == 2)
+                    {
+                        UpdateTicket(Id, value);
+                        return Ok();
+                    }else if(value.BusinessReview && !value.IsRpa && ticketlogs.Count() >= 1)
+                    {
+                        UpdateTicket(Id, value);
+                        return Ok();
+                    }else if(!value.BusinessReview && !value.IsRpa)
+                    {
+                        UpdateTicket(Id, value);
+                        return Ok();
+                    }
+                    else
+                    {
+                         return NotFound("Can't save the ticket. Make sure it is approved by every essential person");
+                    }
                 }
                 else
                 {
-                    if (ticketlogs.Count() >= 3)
+                    if (value.SecondaryCodeReviewer == null && ticketlogs.Count() >= 3)
                     {
                         try
                         {
@@ -171,15 +228,23 @@ namespace CDBAAPI.Controllers
                         {
                             return NotFound(ex);
                         }
-                    }else if(ticketlogs.Count() == 2)
+                    }else if(value.SecondaryCodeReviewer != null && ticketlogs.Count() == 4)
                     {
-                        if(value.BusinessReview)
+                        try
                         {
                             UpdateTicket(Id, value);
                             return Ok();
                         }
+                        catch (Exception ex)
+                        {
+                            return NotFound(ex);
+                        }
                     }
-                    return NotFound("Can't save the ticket. Make sure it is approved by others.");
+                    else
+                    {
+                        return NotFound("Can't save the ticket. Make sure it is approved by every essential person");
+                    }
+
                 }
 
             }
@@ -228,6 +293,12 @@ namespace CDBAAPI.Controllers
 
             var email = claimsIdentity.FindFirst("Email").Value;
 
+            var ticket = _devContext.Tickets.Where(x => x.Id == Id).First();
+            if(ticket.Status=="Completed")
+            {
+                return NotFound("You can't modify a completed ticket");
+            }
+
             var ticketlog = new TicketLog
             {
                 UserId = int.Parse(claimsIdentity.FindFirst("Id").Value),
@@ -248,7 +319,7 @@ namespace CDBAAPI.Controllers
                 _devContext.Add(ticketlog);
                 _devContext.SaveChanges();
 
-                return Ok();
+                return Ok(ticketlog);
             }
             catch (Exception ex)
             {
@@ -269,6 +340,9 @@ namespace CDBAAPI.Controllers
             updateTicket.LastModificationDateTime = DateTime.Now;
             updateTicket.IsRpa = value.IsRpa;
             updateTicket.BusinessReview = value.BusinessReview;
+            updateTicket.BusinessReviewer = value.BusinessReviewer;
+            updateTicket.PrimaryCodeReviewer = value.PrimaryCodeReviewer;
+            updateTicket.SecondaryCodeReviewer = value.SecondaryCodeReviewer;
 
             if(value.Status=="Completed")
             {
