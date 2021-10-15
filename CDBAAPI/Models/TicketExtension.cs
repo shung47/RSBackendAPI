@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace CDBAAPI.Models
 {
-    public class TicketExtension: Ticket
+    public class TicketExtension: TblTicket
     {
         public string DirectorApproval { get; set; }
         public string SALeaderApproval { get; set; }

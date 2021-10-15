@@ -30,9 +30,9 @@ namespace CDBAAPI.Controllers
 
         // GET: api/<TicketsController> Get all tickets
         [HttpGet]
-        public ActionResult<IEnumerable<Ticket>> Get()
+        public ActionResult<IEnumerable<TblTicket>> Get()
         {
-            var result = _devContext.Tickets.Where(x=>x.IsDeleted==false);
+            var result = _devContext.TblTickets.Where(x=>x.IsDeleted==false);
             return Ok(result);
         }
 
@@ -44,7 +44,7 @@ namespace CDBAAPI.Controllers
 
             var role = claimsIdentity.FindFirst("Role").Value;
 
-            Ticket ticket = _devContext.Tickets.Where(x=>x.Id == Id).First();
+            TblTicket ticket = _devContext.TblTickets.Where(x=>x.Id == Id).First();
 
             TicketExtension result = _mapper.Map<TicketExtension>(ticket);
 
@@ -56,10 +56,10 @@ namespace CDBAAPI.Controllers
                 result.SALeaderApproval = "Pending";
                 result.SecondaryCodeApproval = "Pending";
 
-                var records = _devContext.TicketLogs.Where(x => x.TicketId == Id);
+                var records = _devContext.TblTicketLogs.Where(x => x.TicketId == Id);
                 if(records.Count()>0)
                 {
-                    foreach (TicketLog record in records)
+                    foreach (TblTicketLog record in records)
                     {
                         if (!record.IsDeleted && record.ApprovalType == "businessApproval")
                         {
@@ -102,13 +102,13 @@ namespace CDBAAPI.Controllers
 
         // POST api/<TicketsController> Create a new ticket
         [HttpPost]
-        public IActionResult Post([FromBody] Ticket value)
+        public IActionResult Post([FromBody] TblTicket value)
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
             var userId = claimsIdentity.FindFirst("Id").Value;
 
-            Ticket ticket = new Ticket
+            TblTicket ticket = new TblTicket
             {
                 Title = value.Title,
                 Type = value.Type,
@@ -137,13 +137,13 @@ namespace CDBAAPI.Controllers
 
         // PUT api/<TicketsController>/5
         [HttpPut("{id}")]
-        public IActionResult Put(int Id, [FromBody] Ticket value)
+        public IActionResult Put(int Id, [FromBody] TblTicket value)
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
             var userId = claimsIdentity.FindFirst("Id").Value;
 
-            var ticket = _devContext.Tickets.Where(x => x.Id == Id).First();
+            var ticket = _devContext.TblTickets.Where(x => x.Id == Id).First();
             if(ticket.Status=="Completed")
             {
                 return NotFound("You can't modify a completed ticket");
@@ -153,7 +153,7 @@ namespace CDBAAPI.Controllers
             if (value.Status =="Completed")
             {
 
-                var ticketlogs = _devContext.TicketLogs.Where(x => x.TicketId == Id && x.IsDeleted == false && x.Action =="Approved");
+                var ticketlogs = _devContext.TblTicketLogs.Where(x => x.TicketId == Id && x.IsDeleted == false && x.Action =="Approved");
 
                 if (value.BusinessReview && ticketlogs.Where(x => x.ApprovalType=="businessApproval").Count()==0)
                 {
@@ -271,7 +271,7 @@ namespace CDBAAPI.Controllers
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
             var userId = claimsIdentity.FindFirst("Id").Value;
-            var updateTicket = _devContext.Tickets.Find(Id);
+            var updateTicket = _devContext.TblTickets.Find(Id);
             if (int.Parse(userId) == updateTicket.CreatorId)
             {
                 updateTicket.IsDeleted = true;
@@ -293,13 +293,13 @@ namespace CDBAAPI.Controllers
 
             var email = claimsIdentity.FindFirst("Email").Value;
 
-            var ticket = _devContext.Tickets.Where(x => x.Id == Id).First();
+            var ticket = _devContext.TblTickets.Where(x => x.Id == Id).First();
             if(ticket.Status=="Completed")
             {
                 return NotFound("You can't modify a completed ticket");
             }
 
-            var ticketlog = new TicketLog
+            var ticketlog = new TblTicketLog
             {
                 UserId = int.Parse(claimsIdentity.FindFirst("Id").Value),
                 TicketId = Id,
@@ -311,7 +311,7 @@ namespace CDBAAPI.Controllers
 
             try
             {
-                var records = _devContext.TicketLogs.Where(x => x.TicketId == Id && x.ApprovalType == value.ApprovalType);
+                var records = _devContext.TblTicketLogs.Where(x => x.TicketId == Id && x.ApprovalType == value.ApprovalType);
                 foreach(var record in records)
                 {
                     record.IsDeleted = true;
@@ -327,10 +327,10 @@ namespace CDBAAPI.Controllers
             }
         }
 
-        public void UpdateTicket(int Id, Ticket value)
+        public void UpdateTicket(int Id, TblTicket value)
         {
 
-            var updateTicket = _devContext.Tickets.Find(Id);
+            var updateTicket = _devContext.TblTickets.Find(Id);
             updateTicket.Title = value.Title;
             updateTicket.Type = value.Type;
             updateTicket.Description = value.Description;

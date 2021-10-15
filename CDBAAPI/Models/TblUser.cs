@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace CDBAAPI.Models
 {
-    public partial class User
+    public partial class TblUser
     {
         public int Id { get; set; }
         public string Email { get; set; }
@@ -13,5 +13,6 @@ namespace CDBAAPI.Models
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Role { get; set; }
+        public string EmployeeId { get; set; }
     }
 }

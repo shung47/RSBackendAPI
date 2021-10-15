@@ -11,7 +11,7 @@ namespace CDBAAPI.AutoMapper
     {
         public TicketMapping()
         {
-            CreateMap<Ticket, TicketExtension>();
+            CreateMap<TblTicket, TicketExtension>();
         }
     }
 }

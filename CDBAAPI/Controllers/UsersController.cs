@@ -31,9 +31,9 @@ namespace CDBAAPI.Controllers
 
         //GET: api/<UsersController>
         [HttpGet]
-        public ActionResult<IEnumerable<User>> Get()
+        public ActionResult<IEnumerable<TblUser>> Get()
         {
-            var result = _devContext.Users;
+            var result = _devContext.TblUsers;
             return Ok(result);
         }
 
@@ -52,14 +52,14 @@ namespace CDBAAPI.Controllers
         // POST api/<UsersController> SignUp
         [HttpPost]
         [AllowAnonymous]
-        public IActionResult Post([FromBody] User value)
+        public IActionResult Post([FromBody] TblUser value)
         {
-            var users = _devContext.Users.Where(a => a.Email==value.Email).Count();
+            var users = _devContext.TblUsers.Where(a => a.Email==value.Email).Count();
 
             if(users==0)
             {
                 value.Password = EncryptString(value.Password);
-                _devContext.Users.Add(value);
+                _devContext.TblUsers.Add(value);
                 _devContext.SaveChanges();
 
                 return Ok();

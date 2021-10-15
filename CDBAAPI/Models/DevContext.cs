@@ -17,10 +17,9 @@ namespace CDBAAPI.Models
         {
         }
 
-        public virtual DbSet<Ticket> Tickets { get; set; }
-        public virtual DbSet<TicketLog> TicketLogs { get; set; }
-        public virtual DbSet<TicketType> TicketTypes { get; set; }
-        public virtual DbSet<User> Users { get; set; }
+        public virtual DbSet<TblTicket> TblTickets { get; set; }
+        public virtual DbSet<TblTicketLog> TblTicketLogs { get; set; }
+        public virtual DbSet<TblUser> TblUsers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -35,8 +34,10 @@ namespace CDBAAPI.Models
         {
             modelBuilder.HasAnnotation("Relational:Collation", "Chinese_Taiwan_Stroke_CI_AS");
 
-            modelBuilder.Entity<Ticket>(entity =>
+            modelBuilder.Entity<TblTicket>(entity =>
             {
+                entity.ToTable("tblTickets");
+
                 entity.Property(e => e.Id).HasColumnName("ID");
 
                 entity.Property(e => e.Assignee)
@@ -87,8 +88,10 @@ namespace CDBAAPI.Models
                     .IsUnicode(false);
             });
 
-            modelBuilder.Entity<TicketLog>(entity =>
+            modelBuilder.Entity<TblTicketLog>(entity =>
             {
+                entity.ToTable("tblTicket_Logs");
+
                 entity.Property(e => e.Id).HasColumnName("ID");
 
                 entity.Property(e => e.Action)
@@ -107,25 +110,20 @@ namespace CDBAAPI.Models
                 entity.Property(e => e.UserId).HasColumnName("UserID");
             });
 
-            modelBuilder.Entity<TicketType>(entity =>
+            modelBuilder.Entity<TblUser>(entity =>
             {
-                entity.Property(e => e.Id).HasColumnName("ID");
+                entity.ToTable("tblUsers");
 
-                entity.Property(e => e.SaleaderApproval).HasColumnName("SALeaderApproval");
-
-                entity.Property(e => e.TypeTitle)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-            });
-
-            modelBuilder.Entity<User>(entity =>
-            {
                 entity.Property(e => e.Id).HasColumnName("ID");
 
                 entity.Property(e => e.Email)
                     .IsRequired()
                     .HasMaxLength(100)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.EmployeeId)
+                    .IsRequired()
+                    .HasMaxLength(25)
                     .IsUnicode(false);
 
                 entity.Property(e => e.FirstName)

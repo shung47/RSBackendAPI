@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace CDBAAPI.Models
 {
-    public partial class TicketLog
+    public partial class TblTicketLog
     {
         public int Id { get; set; }
         public int UserId { get; set; }

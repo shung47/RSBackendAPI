@@ -30,9 +30,9 @@ namespace CDBAAPI.Controllers
         }
 
         [HttpPost]
-        public IActionResult POST(User value)
+        public IActionResult POST(TblUser value)
         {
-            var user = (from a in _devContext.Users
+            var user = (from a in _devContext.TblUsers
                         where a.Email == value.Email
                         && a.Password == EncryptString(value.Password)
                         select a).SingleOrDefault();
