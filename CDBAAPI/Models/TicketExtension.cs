@@ -7,6 +7,7 @@ namespace CDBAAPI.Models
 {
     public class TicketExtension: TblTicket
     {
+        public string Creator { get; set; }
         public string DirectorApproval { get; set; }
         public string SALeaderApproval { get; set; }
         public string PrimaryCodeApproval { get; set; }

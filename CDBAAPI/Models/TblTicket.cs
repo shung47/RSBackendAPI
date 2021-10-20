@@ -24,5 +24,7 @@ namespace CDBAAPI.Models
         public string PrimaryCodeReviewer { get; set; }
         public string SecondaryCodeReviewer { get; set; }
         public string BusinessReviewer { get; set; }
+        public int? TaskId { get; set; }
+        public string SecondaryDeveloper { get; set; }
     }
 }

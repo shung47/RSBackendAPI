@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -55,6 +56,23 @@ namespace CDBAAPI.Controllers
         public IActionResult Post([FromBody] TblUser value)
         {
             var users = _devContext.TblUsers.Where(a => a.Email==value.Email).Count();
+            var checkEmployeeId = _devContext.TblUsers.Where(a => a.EmployeeId == value.EmployeeId).Count();
+
+            var identity = WindowsIdentity.GetCurrent().Name;
+            if (!identity.Contains(value.EmployeeId))
+            {
+                return NotFound("Your employee ID doesn't match with your windows identity");
+            }
+
+            if (!value.Email.Contains("avnet.com"))
+            {
+                return NotFound("You have to register with an Avnet email");
+            }
+
+            if(checkEmployeeId>0)
+            {
+                return NotFound("Your employee ID is exist");
+            }
 
             if(users==0)
             {
@@ -68,7 +86,7 @@ namespace CDBAAPI.Controllers
             {
                 return NotFound("The account is already exist");
             }
-        }
+         }
 
         // PUT api/<UsersController>/5
         [HttpPut("{id}")]

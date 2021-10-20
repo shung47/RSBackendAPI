@@ -17,6 +17,7 @@ namespace CDBAAPI.Models
         {
         }
 
+        public virtual DbSet<TblTask> TblTasks { get; set; }
         public virtual DbSet<TblTicket> TblTickets { get; set; }
         public virtual DbSet<TblTicketLog> TblTicketLogs { get; set; }
         public virtual DbSet<TblUser> TblUsers { get; set; }
@@ -33,6 +34,37 @@ namespace CDBAAPI.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "Chinese_Taiwan_Stroke_CI_AS");
+
+            modelBuilder.Entity<TblTask>(entity =>
+            {
+                entity.ToTable("tblTasks");
+
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.Department)
+                    .IsRequired()
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ReferenceNumber)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Region)
+                    .IsRequired()
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Summary)
+                    .IsRequired()
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.TaskName)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
 
             modelBuilder.Entity<TblTicket>(entity =>
             {
@@ -69,6 +101,10 @@ namespace CDBAAPI.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.SecondaryCodeReviewer)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.SecondaryDeveloper)
                     .HasMaxLength(50)
                     .IsUnicode(false);
 

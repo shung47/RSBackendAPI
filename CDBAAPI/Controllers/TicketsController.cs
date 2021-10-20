@@ -8,6 +8,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoMapper;
+using System.Security.Principal;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -34,6 +35,7 @@ namespace CDBAAPI.Controllers
         {
             var result = _devContext.TblTickets.Where(x=>x.IsDeleted==false);
             return Ok(result);
+            
         }
 
         // GET api/<TicketsController>/5
@@ -48,6 +50,7 @@ namespace CDBAAPI.Controllers
 
             TicketExtension result = _mapper.Map<TicketExtension>(ticket);
 
+            var creator = _devContext.TblUsers.Where(x => x.Id == ticket.CreatorId).First();
             if (result!=null)
             {
                 result.BusinessApproval = "Pending";
@@ -92,6 +95,8 @@ namespace CDBAAPI.Controllers
                         }
                     }
                 }
+
+                result.Creator = creator.Email;
                 return Ok(result);
             }
             else
@@ -116,11 +121,13 @@ namespace CDBAAPI.Controllers
                 Status = "Progressing",
                 Assignee = value.Assignee,
                 Developer = value.Developer,
+                SecondaryDeveloper = value.SecondaryDeveloper,
                 IsRpa = value.IsRpa,
-                BusinessReview = value.BusinessReview,
+                BusinessReview = true,
                 CreatorId = int.Parse(userId),
                 CreatedDateTime = DateTime.Now,
                 LastModificationDateTime = DateTime.Now,
+                TaskId = value.TaskId,
                 IsDeleted = false
             };
             try
@@ -150,103 +157,43 @@ namespace CDBAAPI.Controllers
             }
 
 
-            if (value.Status =="Completed")
+            if (value.Status == "Completed")
             {
 
-                var ticketlogs = _devContext.TblTicketLogs.Where(x => x.TicketId == Id && x.IsDeleted == false && x.Action =="Approved");
+                var ticketlogs = _devContext.TblTicketLogs.Where(x => x.TicketId == Id && x.IsDeleted == false && x.Action == "Approved");
 
-                if (value.BusinessReview && ticketlogs.Where(x => x.ApprovalType=="businessApproval").Count()==0)
+                if (value.BusinessReview && !ticketlogs.Any(X => X.ApprovalType == "businessApproval"))
                 {
-                    return NotFound("Can't save the ticket. Make sure it is approved by others.");
+                    return NotFound("Can't save the ticket. Make sure it is approved by every essential peroson.");
+                }
+                if (value.IsRpa && !ticketlogs.Any(x => x.ApprovalType == "primaryCodeApproval"))
+                {
+                    return NotFound("Can't save the ticket. Make sure it is approved by every essential peroson.");
                 }
 
-                if (value.Type == "Project")
+                if (value.SecondaryCodeReviewer != null && !ticketlogs.Any(x => x.ApprovalType == "secondaryCodeApproval"))
                 {
-                    if(value.SecondaryCodeReviewer==null&& ticketlogs.Count() ==4)                   
-                    {
-                        try
-                        {
-                            UpdateTicket(Id, value);
-                            return Ok();
-                        }
-                        catch (Exception ex)
-                        {
-                            return NotFound(ex);
-                        }
-                    }else if (ticketlogs.Count() == 5)
-                    {
-                        try
-                        {
-                            UpdateTicket(Id, value);
-                            return Ok();
-                        }
-                        catch (Exception ex)
-                        {
-                            return NotFound(ex);
-                        }
-                    }
-                    else
-                    {
-                        return NotFound("Can't save the ticket. Make sure it is approved by every essential person");
-                    }
-
-                }
-                else if (value.Type == "Incident")
-                {
-                    if(value.BusinessReview && value.IsRpa && ticketlogs.Count() == 3)
-                    {
-                        UpdateTicket(Id, value);
-                        return Ok();
-                    }else if(!value.BusinessReview && value.IsRpa && ticketlogs.Count() == 2)
-                    {
-                        UpdateTicket(Id, value);
-                        return Ok();
-                    }else if(value.BusinessReview && !value.IsRpa && ticketlogs.Count() >= 1)
-                    {
-                        UpdateTicket(Id, value);
-                        return Ok();
-                    }else if(!value.BusinessReview && !value.IsRpa)
-                    {
-                        UpdateTicket(Id, value);
-                        return Ok();
-                    }
-                    else
-                    {
-                         return NotFound("Can't save the ticket. Make sure it is approved by every essential person");
-                    }
-                }
-                else
-                {
-                    if (value.SecondaryCodeReviewer == null && ticketlogs.Count() >= 3)
-                    {
-                        try
-                        {
-                            UpdateTicket(Id, value);
-                            return Ok();
-                        }
-                        catch (Exception ex)
-                        {
-                            return NotFound(ex);
-                        }
-                    }else if(value.SecondaryCodeReviewer != null && ticketlogs.Count() == 4)
-                    {
-                        try
-                        {
-                            UpdateTicket(Id, value);
-                            return Ok();
-                        }
-                        catch (Exception ex)
-                        {
-                            return NotFound(ex);
-                        }
-                    }
-                    else
-                    {
-                        return NotFound("Can't save the ticket. Make sure it is approved by every essential person");
-                    }
-
+                    return NotFound("Can't save the ticket. Make sure it is approved by every essential peroson.");
                 }
 
+                if (value.Type == "Project" && !ticketlogs.Any(x => x.ApprovalType == "directorApproval"))
+                {
+                    return NotFound("Can't save the ticket. Make sure it is approved by every essential peroson.");
+                }
+
+                if (value.Type != "Incident" && !ticketlogs.Any(x => x.ApprovalType == "saLeaderApproval"))
+                {
+                    return NotFound("Can't save the ticket. Make sure it is approved by every essential peroson.");
+                }
+                try
+                {
+                    UpdateTicket(Id, value);
+                    return Ok();
+                }
+                catch (Exception ex)
+                {
+                    return NotFound(ex);
+                }
             }
             else
             {
@@ -260,9 +207,6 @@ namespace CDBAAPI.Controllers
                     return NotFound(ex);
                 }
             }
-
-
-
         }
 
         // DELETE api/<TicketsController>/5
@@ -337,14 +281,16 @@ namespace CDBAAPI.Controllers
             updateTicket.Status = value.Status;
             updateTicket.Assignee = value.Assignee;
             updateTicket.Developer = value.Developer;
+            updateTicket.SecondaryDeveloper = value.SecondaryDeveloper;
             updateTicket.LastModificationDateTime = DateTime.Now;
             updateTicket.IsRpa = value.IsRpa;
             updateTicket.BusinessReview = value.BusinessReview;
             updateTicket.BusinessReviewer = value.BusinessReviewer;
             updateTicket.PrimaryCodeReviewer = value.PrimaryCodeReviewer;
             updateTicket.SecondaryCodeReviewer = value.SecondaryCodeReviewer;
+            updateTicket.TaskId = value.TaskId;
 
-            if(value.Status=="Completed")
+            if (value.Status=="Completed")
             {
                 updateTicket.CompletedDateTime = DateTime.Now;
             }

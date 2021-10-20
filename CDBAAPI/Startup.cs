@@ -33,6 +33,7 @@ namespace CDBAAPI
             services.AddControllers();
             services.AddCors();
             services.AddAutoMapper(typeof(Startup));
+            services.AddControllers().AddNewtonsoftJson();
             services.AddDbContext<DevContext>(options =>
         options.UseSqlServer(Configuration.GetConnectionString("DevDatabase")));
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

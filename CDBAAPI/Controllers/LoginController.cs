@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -32,6 +33,7 @@ namespace CDBAAPI.Controllers
         [HttpPost]
         public IActionResult POST(TblUser value)
         {
+
             var user = (from a in _devContext.TblUsers
                         where a.Email == value.Email
                         && a.Password == EncryptString(value.Password)
@@ -39,7 +41,7 @@ namespace CDBAAPI.Controllers
 
             if (user == null)
             {
-                return NotFound();
+                return NotFound("Incorrect account or password");
             }
 
             //if (DecryptString(user.Password)!=value.Password)
