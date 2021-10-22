@@ -58,12 +58,6 @@ namespace CDBAAPI.Controllers
             var users = _devContext.TblUsers.Where(a => a.Email==value.Email).Count();
             var checkEmployeeId = _devContext.TblUsers.Where(a => a.EmployeeId == value.EmployeeId).Count();
 
-            var identity = WindowsIdentity.GetCurrent().Name;
-            if (!identity.Contains(value.EmployeeId))
-            {
-                return NotFound("Your employee ID doesn't match with your windows identity");
-            }
-
             if (!value.Email.Contains("avnet.com"))
             {
                 return NotFound("You have to register with an Avnet email");

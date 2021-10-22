@@ -17,6 +17,7 @@ namespace CDBAAPI.Models
         {
         }
 
+        public virtual DbSet<TblDbControl> TblDbControls { get; set; }
         public virtual DbSet<TblTask> TblTasks { get; set; }
         public virtual DbSet<TblTicket> TblTickets { get; set; }
         public virtual DbSet<TblTicketLog> TblTicketLogs { get; set; }
@@ -34,6 +35,23 @@ namespace CDBAAPI.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "Chinese_Taiwan_Stroke_CI_AS");
+
+            modelBuilder.Entity<TblDbControl>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("tblDB_Control");
+
+                entity.Property(e => e.Database)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.SaMaster)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("SA_Master");
+            });
 
             modelBuilder.Entity<TblTask>(entity =>
             {
@@ -83,6 +101,11 @@ namespace CDBAAPI.Models
                 entity.Property(e => e.CompletedDateTime).HasColumnType("datetime");
 
                 entity.Property(e => e.CreatedDateTime).HasColumnType("datetime");
+
+                entity.Property(e => e.Dbmaster)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("DBMaster");
 
                 entity.Property(e => e.Description)
                     .HasMaxLength(255)

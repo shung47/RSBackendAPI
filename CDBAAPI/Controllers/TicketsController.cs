@@ -50,6 +50,10 @@ namespace CDBAAPI.Controllers
 
             TicketExtension result = _mapper.Map<TicketExtension>(ticket);
 
+            var dbControl = _devContext.TblDbControls;
+
+            List<TblDbControl> dbControlList = _mapper.Map<List<TblDbControl>>(dbControl);
+
             var creator = _devContext.TblUsers.Where(x => x.Id == ticket.CreatorId).First();
             if (result!=null)
             {
@@ -97,6 +101,7 @@ namespace CDBAAPI.Controllers
                 }
 
                 result.Creator = creator.Email;
+                result.DBControlList = dbControlList;
                 return Ok(result);
             }
             else
@@ -118,7 +123,7 @@ namespace CDBAAPI.Controllers
                 Title = value.Title,
                 Type = value.Type,
                 Description = value.Description,
-                Status = "Progressing",
+                Status = "OnHold",
                 Assignee = value.Assignee,
                 Developer = value.Developer,
                 SecondaryDeveloper = value.SecondaryDeveloper,
@@ -289,6 +294,7 @@ namespace CDBAAPI.Controllers
             updateTicket.PrimaryCodeReviewer = value.PrimaryCodeReviewer;
             updateTicket.SecondaryCodeReviewer = value.SecondaryCodeReviewer;
             updateTicket.TaskId = value.TaskId;
+            updateTicket.Dbmaster = value.Dbmaster;
 
             if (value.Status=="Completed")
             {

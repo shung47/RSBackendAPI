@@ -13,6 +13,7 @@ namespace CDBAAPI.Models
         public string PrimaryCodeApproval { get; set; }
         public string SecondaryCodeApproval { get; set; }
         public string BusinessApproval { get; set; }
+        public List<TblDbControl> DBControlList { get;set; }
         public DateTime DirectorApprovalTime { get; set; }
         public DateTime SALeaderApprovalTime { get; set; }
         public DateTime PrimaryCodeApprovalTime { get; set; }
