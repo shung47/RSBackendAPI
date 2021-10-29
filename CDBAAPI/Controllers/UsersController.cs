@@ -35,6 +35,7 @@ namespace CDBAAPI.Controllers
         public ActionResult<IEnumerable<TblUser>> Get()
         {
             var result = _devContext.TblUsers;
+            //var result = User.Claims.ToList().First().Value;
             return Ok(result);
         }
 

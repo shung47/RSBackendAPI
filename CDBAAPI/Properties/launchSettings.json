@@ -1,13 +1,13 @@
 {
   "iisSettings": {
     "windowsAuthentication": false,
-    "anonymousAuthentication": false,
+    "anonymousAuthentication": true,
     "iis": {
       "applicationUrl": "http://localhost/CDBAAPI",
       "sslPort": 0
     },
     "iisExpress": {
-      "applicationUrl": "http://localhost:33513",
+      "applicationUrl": "https://localhost:44349/",
       "sslPort": 44349
     }
   },
@@ -15,15 +15,15 @@
   "profiles": {
     "IIS Express": {
       "commandName": "IISExpress",
-      "launchBrowser": true,
-      "launchUrl": "api/users",
+      "launchUrl": "api/tickets",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "nativeDebugging": false
     },
     "CDBAAPI": {
       "commandName": "Project",
-      "launchUrl": "api/users",
+      "launchUrl": "api/",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
