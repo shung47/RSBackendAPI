@@ -58,6 +58,9 @@ namespace CDBAAPI.Controllers
         {
             var users = _devContext.TblUsers.Where(a => a.Email==value.Email).Count();
             var checkEmployeeId = _devContext.TblUsers.Where(a => a.EmployeeId == value.EmployeeId).Count();
+            var employees  = _devContext.TblTicketLoginInfos.Where(a=>a.Inactive == null && (a.Team == "HK"|| a.Team == "TW" || a.Team == "SG" || a.Team == "CN"));
+
+
 
             if (!value.Email.Contains("avnet.com"))
             {
@@ -71,11 +74,18 @@ namespace CDBAAPI.Controllers
 
             if(users==0)
             {
-                value.Password = EncryptString(value.Password);
-                _devContext.TblUsers.Add(value);
-                _devContext.SaveChanges();
+                if(employees.Any(a => a.Id == int.Parse(value.EmployeeId)))
+                {
+                    value.Password = EncryptString(value.Password);
+                    _devContext.TblUsers.Add(value);
+                    _devContext.SaveChanges();
 
-                return Ok();
+                    return Ok();
+                }
+                else
+                {
+                    return NotFound("Sorry, you are not allowed to create an account in the system");
+                }
             }
             else
             {

@@ -9,6 +9,9 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoMapper;
 using System.Security.Principal;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -274,6 +277,71 @@ namespace CDBAAPI.Controllers
             {
                 return NotFound(ex);
             }
+        }
+
+        [HttpGet("SendEmail/{id}")]
+        public IActionResult SendEmail(int id)
+        {
+            var claimsIdentity = User.Identity as ClaimsIdentity;
+
+            var userId = claimsIdentity.FindFirst("Id").Value;
+
+            var ticket = _devContext.TblTickets.Where(x => x.Id == id).First();
+            
+            var ticketlogs = _devContext.TblTicketLogs.Where(x => x.TicketId == id && x.IsDeleted == false);
+
+            var mailMessage = new MimeMessage();
+
+            if (ticket.PrimaryCodeReviewer!=null&& !ticketlogs.Any(x=>x.ApprovalType=="primaryCodeApproval" && x.Action=="Approved"))
+            {
+                mailMessage.To.Add(new MailboxAddress("", ticket.PrimaryCodeReviewer));
+            }
+
+            if (ticket.SecondaryCodeReviewer != null && !ticketlogs.Any(x => x.ApprovalType == "secondaryCodeApproval" && x.Action == "Approved"))
+            {
+                if(!mailMessage.To.Contains(InternetAddress.Parse(ticket.SecondaryCodeReviewer)))
+                mailMessage.To.Add(new MailboxAddress("", ticket.SecondaryCodeReviewer));
+            }
+
+            if (ticket.BusinessReviewer != null && !ticketlogs.Any(x => x.ApprovalType == "businessApproval" && x.Action == "Approved"))
+            {
+                if (!mailMessage.To.Contains(InternetAddress.Parse(ticket.BusinessReviewer)))
+                    mailMessage.To.Add(new MailboxAddress("", ticket.BusinessReviewer));
+            }
+
+            if (ticket.Type != "Incident" && !ticketlogs.Any(x => x.ApprovalType == "saLeaderApproval" && x.Action == "Approved"))
+            {
+                //send to SA Leader
+                //mailMessage.To.Add(new MailboxAddress("", ""));
+            }
+
+            if (ticket.Type == "Project" && mailMessage.To==null && !ticketlogs.Any(x => x.ApprovalType == "directorApproval" && x.Action == "Approved"))
+            {
+                //send to director email
+                //mailMessage.To.Add(new MailboxAddress("", ""));
+            }
+
+            mailMessage.From.Add(new MailboxAddress("CDBA_AUTO", "CDBA-AUTO@AVNET.COM"));
+            mailMessage.Subject = "Approval Reminder";
+            mailMessage.Body = new TextPart("plain")
+            {
+                Text = "Hello,\n\n" +
+                "This is a reminder for you to approve the following ticket:\n" +
+                "http://localhost:3000/Tickets/Edit/" + id +
+                "\n\n Best regards,"
+            };
+
+            if(mailMessage.To.Count()!=0)
+            {
+                using (var smtpClient = new SmtpClient())
+                {
+                    smtpClient.Connect("Smtprelay.avnet.com", 25, false);
+                    //smtpClient.Authenticate("user", "password");
+                    smtpClient.Send(mailMessage);
+                    smtpClient.Disconnect(true);
+                }
+            }
+            return Ok();
         }
 
         public void UpdateTicket(int Id, TblTicket value)

@@ -21,6 +21,7 @@ namespace CDBAAPI.Models
         public virtual DbSet<TblTask> TblTasks { get; set; }
         public virtual DbSet<TblTicket> TblTickets { get; set; }
         public virtual DbSet<TblTicketLog> TblTicketLogs { get; set; }
+        public virtual DbSet<TblTicketLoginInfo> TblTicketLoginInfos { get; set; }
         public virtual DbSet<TblUser> TblUsers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -167,6 +168,29 @@ namespace CDBAAPI.Models
                 entity.Property(e => e.TicketId).HasColumnName("TicketID");
 
                 entity.Property(e => e.UserId).HasColumnName("UserID");
+            });
+
+            modelBuilder.Entity<TblTicketLoginInfo>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("tblTicket_LoginInfo");
+
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.Inactive)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Team)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<TblUser>(entity =>

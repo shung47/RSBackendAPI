@@ -21,24 +21,33 @@ namespace CDBAAPI
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
             Configuration = configuration;
+            CurrentEnvironment = env;
         }
 
         public IConfiguration Configuration { get; }
+        public IWebHostEnvironment CurrentEnvironment { get; set; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             //services.AddAuthentication(IISDefaults.AuthenticationScheme);
+            var env = CurrentEnvironment.EnvironmentName;
             services.AddControllers();
             services.AddCors();
             services.AddAutoMapper(typeof(Startup));
             services.AddControllers().AddNewtonsoftJson();
-            services.AddDbContext<DevContext>(options =>
-            options.UseSqlServer(Configuration.GetConnectionString("DevDatabase")));
-
+            if(env=="Development")
+            {
+                services.AddDbContext<DevContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("DevDatabase")));
+            }else
+            {
+                services.AddDbContext<DevContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("ProductionDatabase")));
+            }
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                .AddJwtBearer(options =>
                {
@@ -64,15 +73,14 @@ namespace CDBAAPI
 
             app.UseHttpsRedirection();
 
-            //app.UseCors(x => x
-            //    .AllowAnyMethod()
-            //    .AllowAnyHeader()
-            //    .SetIsOriginAllowed(origin => true) // allow any origin
-            //    .AllowCredentials());
-
             //Order is matter
             app.UseRouting();
-            app.UseCors("CorsPolicy");
+            //app.UseCors("CorsPolicy");
+            app.UseCors(x => x
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .SetIsOriginAllowed(origin => true) // allow any origin
+                .AllowCredentials());
             app.UseAuthentication();
             app.UseAuthorization();
 
