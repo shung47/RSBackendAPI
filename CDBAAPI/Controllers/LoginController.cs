@@ -35,13 +35,13 @@ namespace CDBAAPI.Controllers
         {
 
             var user = (from a in _devContext.TblUsers
-                        where a.Email == value.Email
+                        where a.EmployeeId == value.EmployeeId
                         && a.Password == EncryptString(value.Password)
                         select a).SingleOrDefault();
 
             if (user == null)
             {
-                return NotFound("Incorrect account or password");
+                return NotFound("Incorrect ID or password");
             }
 
             //if (DecryptString(user.Password)!=value.Password)
@@ -53,11 +53,8 @@ namespace CDBAAPI.Controllers
 
             var claims = new List<Claim>
                 {
-                    new Claim("Email", user.Email),
-                    new Claim("FirstName", user.FirstName),
-                    new Claim("LastName", user.LastName),
-                    new Claim("Role", user.Role),
-                    new Claim("Id", user.Id.ToString())
+                    new Claim("EmployeeId", user.EmployeeId),
+                    new Claim("Name", user.Name)
                 };
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:KEY"]));

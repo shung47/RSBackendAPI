@@ -20,12 +20,12 @@ namespace CDBAAPI.Models
         public DateTime? LastModificationDateTime { get; set; }
         public string Description { get; set; }
         public bool IsDeleted { get; set; }
-        public int? CreatorId { get; set; }
         public string PrimaryCodeReviewer { get; set; }
         public string SecondaryCodeReviewer { get; set; }
         public string BusinessReviewer { get; set; }
         public int? TaskId { get; set; }
         public string SecondaryDeveloper { get; set; }
         public string Dbmaster { get; set; }
+        public string CreatorId { get; set; }
     }
 }

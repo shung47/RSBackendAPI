@@ -56,28 +56,28 @@ namespace CDBAAPI.Controllers
         [AllowAnonymous]
         public IActionResult Post([FromBody] TblUser value)
         {
-            var users = _devContext.TblUsers.Where(a => a.Email==value.Email).Count();
-            var checkEmployeeId = _devContext.TblUsers.Where(a => a.EmployeeId == value.EmployeeId).Count();
-            var employees  = _devContext.TblTicketLoginInfos.Where(a=>a.Inactive == null && (a.Team == "HK"|| a.Team == "TW" || a.Team == "SG" || a.Team == "CN"));
+            var users = _devContext.TblUsers.Where(a => a.EmployeeId==value.EmployeeId);
+            var validEmployees  = _devContext.TblTicketLoginInfos.Where(a=>a.Inactive == null && (a.Team == "HK"|| a.Team == "TW" || a.Team == "SG" || a.Team == "CN"));
 
-
-
-            if (!value.Email.Contains("avnet.com"))
+            if(users.Count()>0)
             {
-                return NotFound("You have to register with an Avnet email");
+                return NotFound("Your employee ID is existing in the system");
             }
 
-            if(checkEmployeeId>0)
+            if(users.Count() == 0)
             {
-                return NotFound("Your employee ID is exist");
-            }
-
-            if(users==0)
-            {
-                if(employees.Any(a => a.Id == int.Parse(value.EmployeeId)))
+                if(validEmployees.Any(a => a.Id == int.Parse(value.EmployeeId)))
                 {
-                    value.Password = EncryptString(value.Password);
-                    _devContext.TblUsers.Add(value);
+                    var validEmployee = validEmployees.Where(a => a.Id == int.Parse(value.EmployeeId)).First();
+                    TblUser tblUser = new TblUser()
+                    {
+                        EmployeeId = value.EmployeeId,
+                        Password = EncryptString(value.Password),
+                        Name = validEmployee.Name,
+                        Team = validEmployee.Team
+                    };
+                    
+                    _devContext.TblUsers.Add(tblUser);
                     _devContext.SaveChanges();
 
                     return Ok();

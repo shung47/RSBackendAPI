@@ -36,9 +36,35 @@ namespace CDBAAPI.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<TblTicket>> Get()
         {
-            var result = _devContext.TblTickets.Where(x=>x.IsDeleted==false);
-            return Ok(result);
-            
+            var tickets = _devContext.TblTickets.Where(x=>x.IsDeleted==false);
+            var tblUser = _devContext.TblUsers;
+            List<TicketExtension> result = new List<TicketExtension>();
+
+            try
+            {
+                foreach (var ticket in tickets.ToList())
+                {
+                    TicketExtension t = _mapper.Map<TicketExtension>(ticket);
+                    if(!string.IsNullOrEmpty(ticket.Assignee))
+                        t.AssigneeName = tblUser.Where(x => x.EmployeeId == ticket.Assignee).FirstOrDefault().Name;
+                    if(!string.IsNullOrEmpty(ticket.Developer))
+                        t.DeveloperName = tblUser.Where(x => x.EmployeeId == t.Developer).FirstOrDefault().Name;
+                    if(!string.IsNullOrEmpty(ticket.BusinessReviewer))
+                        t.BusinessReviewerName = tblUser.Where(x => x.EmployeeId == t.BusinessReviewer).FirstOrDefault().Name;
+                    if(!string.IsNullOrEmpty(ticket.SecondaryDeveloper))
+                        t.SecondaryDeveloperName = tblUser.Where(x => x.EmployeeId == t.SecondaryDeveloper).FirstOrDefault().Name;
+                    if (!string.IsNullOrEmpty(ticket.PrimaryCodeReviewer))
+                        t.PrimaryCodeReviewerName = tblUser.Where(x => x.EmployeeId == t.PrimaryCodeReviewer).FirstOrDefault().Name;
+                    if (!string.IsNullOrEmpty(ticket.SecondaryCodeReviewer))
+                        t.SecondaryCodeReviewerName = tblUser.Where(x => x.EmployeeId == t.SecondaryCodeReviewer).FirstOrDefault().Name;
+                    result.Add(t);
+                }
+                return Ok(result);
+
+            }catch(Exception ex)
+            {
+                return NotFound(ex);
+            }           
         }
 
         // GET api/<TicketsController>/5
@@ -47,9 +73,7 @@ namespace CDBAAPI.Controllers
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
-            var role = claimsIdentity.FindFirst("Role").Value;
-
-            TblTicket ticket = _devContext.TblTickets.Where(x=>x.Id == Id).First();
+            TblTicket ticket = _devContext.TblTickets.Where(x=>x.Id == Id).FirstOrDefault();
 
             TicketExtension result = _mapper.Map<TicketExtension>(ticket);
 
@@ -57,7 +81,7 @@ namespace CDBAAPI.Controllers
 
             List<TblDbControl> dbControlList = _mapper.Map<List<TblDbControl>>(dbControl);
 
-            var creator = _devContext.TblUsers.Where(x => x.Id == ticket.CreatorId).First();
+            var creator = _devContext.TblUsers.Where(x => x.EmployeeId == ticket.CreatorId.ToString()).FirstOrDefault();
             if (result!=null)
             {
                 result.BusinessApproval = "Pending";
@@ -103,7 +127,8 @@ namespace CDBAAPI.Controllers
                     }
                 }
 
-                result.Creator = creator.Email;
+                result.Creator = creator.EmployeeId;
+                result.CreatorName = creator.Name;
                 result.DBControlList = dbControlList;
                 return Ok(result);
             }
@@ -119,7 +144,7 @@ namespace CDBAAPI.Controllers
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
-            var userId = claimsIdentity.FindFirst("Id").Value;
+            var employeeId = claimsIdentity.FindFirst("EmployeeId").Value;
 
             TblTicket ticket = new TblTicket
             {
@@ -132,7 +157,7 @@ namespace CDBAAPI.Controllers
                 SecondaryDeveloper = value.SecondaryDeveloper,
                 IsRpa = value.IsRpa,
                 BusinessReview = true,
-                CreatorId = int.Parse(userId),
+                CreatorId = employeeId,
                 CreatedDateTime = DateTime.Now,
                 LastModificationDateTime = DateTime.Now,
                 TaskId = value.TaskId,
@@ -156,9 +181,9 @@ namespace CDBAAPI.Controllers
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
-            var userId = claimsIdentity.FindFirst("Id").Value;
+            var employeeId = claimsIdentity.FindFirst("EmployeeId").Value;
 
-            var ticket = _devContext.TblTickets.Where(x => x.Id == Id).First();
+            var ticket = _devContext.TblTickets.Where(x => x.Id == Id).FirstOrDefault();
             if(ticket.Status=="Completed")
             {
                 return NotFound("You can't modify a completed ticket");
@@ -222,9 +247,9 @@ namespace CDBAAPI.Controllers
         public IActionResult Delete(int Id)
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
-            var userId = claimsIdentity.FindFirst("Id").Value;
+            var EmployeeId = claimsIdentity.FindFirst("EmployeeId").Value;
             var updateTicket = _devContext.TblTickets.Find(Id);
-            if (int.Parse(userId) == updateTicket.CreatorId)
+            if (EmployeeId == updateTicket.CreatorId)
             {
                 updateTicket.IsDeleted = true;
                 _devContext.SaveChanges();
@@ -243,9 +268,9 @@ namespace CDBAAPI.Controllers
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
-            var email = claimsIdentity.FindFirst("Email").Value;
+            var employeeId = claimsIdentity.FindFirst("EmployeeId").Value;
 
-            var ticket = _devContext.TblTickets.Where(x => x.Id == Id).First();
+            var ticket = _devContext.TblTickets.Where(x => x.Id == Id).FirstOrDefault();
             if(ticket.Status=="Completed")
             {
                 return NotFound("You can't modify a completed ticket");
@@ -253,7 +278,7 @@ namespace CDBAAPI.Controllers
 
             var ticketlog = new TblTicketLog
             {
-                UserId = int.Parse(claimsIdentity.FindFirst("Id").Value),
+                EmployeeId = claimsIdentity.FindFirst("EmployeeId").Value,
                 TicketId = Id,
                 Action = value.ApprovalStatus,
                 ModificationDatetime = DateTime.Now,
@@ -284,9 +309,11 @@ namespace CDBAAPI.Controllers
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
-            var userId = claimsIdentity.FindFirst("Id").Value;
+            var employeeId = claimsIdentity.FindFirst("EmployeeId").Value;
 
-            var ticket = _devContext.TblTickets.Where(x => x.Id == id).First();
+            var user = _devContext.TblUsers.Where(x => x.EmployeeId == employeeId).FirstOrDefault();
+
+            var ticket = _devContext.TblTickets.Where(x => x.Id == id).FirstOrDefault();
             
             var ticketlogs = _devContext.TblTicketLogs.Where(x => x.TicketId == id && x.IsDeleted == false);
 
@@ -294,19 +321,19 @@ namespace CDBAAPI.Controllers
 
             if (ticket.PrimaryCodeReviewer!=null&& !ticketlogs.Any(x=>x.ApprovalType=="primaryCodeApproval" && x.Action=="Approved"))
             {
-                mailMessage.To.Add(new MailboxAddress("", ticket.PrimaryCodeReviewer));
+                mailMessage.To.Add(new MailboxAddress(user.Name, user.EmployeeId+"@avnet.com"));
             }
 
             if (ticket.SecondaryCodeReviewer != null && !ticketlogs.Any(x => x.ApprovalType == "secondaryCodeApproval" && x.Action == "Approved"))
             {
-                if(!mailMessage.To.Contains(InternetAddress.Parse(ticket.SecondaryCodeReviewer)))
-                mailMessage.To.Add(new MailboxAddress("", ticket.SecondaryCodeReviewer));
+                if(!mailMessage.To.Contains(InternetAddress.Parse(user.EmployeeId + "@avnet.com")))
+                mailMessage.To.Add(new MailboxAddress(user.Name, user.EmployeeId + "@avnet.com"));
             }
 
             if (ticket.BusinessReviewer != null && !ticketlogs.Any(x => x.ApprovalType == "businessApproval" && x.Action == "Approved"))
             {
-                if (!mailMessage.To.Contains(InternetAddress.Parse(ticket.BusinessReviewer)))
-                    mailMessage.To.Add(new MailboxAddress("", ticket.BusinessReviewer));
+                if (!mailMessage.To.Contains(InternetAddress.Parse(user.EmployeeId + "@avnet.com")))
+                    mailMessage.To.Add(new MailboxAddress(user.Name, user.EmployeeId + "@avnet.com"));
             }
 
             if (ticket.Type != "Incident" && !ticketlogs.Any(x => x.ApprovalType == "saLeaderApproval" && x.Action == "Approved"))
@@ -328,7 +355,8 @@ namespace CDBAAPI.Controllers
                 Text = "Hello,\n\n" +
                 "This is a reminder for you to approve the following ticket:\n" +
                 "http://localhost:3000/Tickets/Edit/" + id +
-                "\n\n Best regards,"
+                "\n\n Best regards,"+
+                "\nCDBA Team"
             };
 
             if(mailMessage.To.Count()!=0)

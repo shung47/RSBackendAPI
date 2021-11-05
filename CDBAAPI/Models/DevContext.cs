@@ -103,6 +103,11 @@ namespace CDBAAPI.Models
 
                 entity.Property(e => e.CreatedDateTime).HasColumnType("datetime");
 
+                entity.Property(e => e.CreatorId)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasColumnName("creatorId");
+
                 entity.Property(e => e.Dbmaster)
                     .HasMaxLength(50)
                     .IsUnicode(false)
@@ -163,11 +168,14 @@ namespace CDBAAPI.Models
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
+                entity.Property(e => e.EmployeeId)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.ModificationDatetime).HasColumnType("datetime");
 
                 entity.Property(e => e.TicketId).HasColumnName("TicketID");
-
-                entity.Property(e => e.UserId).HasColumnName("UserID");
             });
 
             modelBuilder.Entity<TblTicketLoginInfo>(entity =>
@@ -199,22 +207,12 @@ namespace CDBAAPI.Models
 
                 entity.Property(e => e.Id).HasColumnName("ID");
 
-                entity.Property(e => e.Email)
-                    .IsRequired()
-                    .HasMaxLength(100)
-                    .IsUnicode(false);
-
                 entity.Property(e => e.EmployeeId)
                     .IsRequired()
                     .HasMaxLength(25)
                     .IsUnicode(false);
 
-                entity.Property(e => e.FirstName)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.LastName)
+                entity.Property(e => e.Name)
                     .IsRequired()
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -224,8 +222,8 @@ namespace CDBAAPI.Models
                     .HasMaxLength(255)
                     .IsUnicode(false);
 
-                entity.Property(e => e.Role)
-                    .HasMaxLength(30)
+                entity.Property(e => e.Team)
+                    .HasMaxLength(25)
                     .IsUnicode(false);
             });
 

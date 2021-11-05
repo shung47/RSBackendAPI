@@ -19,5 +19,13 @@ namespace CDBAAPI.Models
         public DateTime PrimaryCodeApprovalTime { get; set; }
         public DateTime SecondaryCodeApprovalTime { get; set; }
         public DateTime BusinessApprovalTime { get; set; }
+        public string AssigneeName { get; set; }
+        public string DeveloperName { get; set; }
+        public string SecondaryDeveloperName { get; set; }
+        public string PrimaryCodeReviewerName { get; set; }
+        public string SecondaryCodeReviewerName { get; set; }
+        public string BusinessReviewerName { get; set; }
+        public string CreatorName { get; set; }
+
     }
 }

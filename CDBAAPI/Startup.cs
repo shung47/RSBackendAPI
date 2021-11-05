@@ -34,12 +34,11 @@ namespace CDBAAPI
         public void ConfigureServices(IServiceCollection services)
         {
             //services.AddAuthentication(IISDefaults.AuthenticationScheme);
-            var env = CurrentEnvironment.EnvironmentName;
             services.AddControllers();
             services.AddCors();
             services.AddAutoMapper(typeof(Startup));
             services.AddControllers().AddNewtonsoftJson();
-            if(env=="Development")
+            if(CurrentEnvironment.IsDevelopment())
             {
                 services.AddDbContext<DevContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DevDatabase")));
