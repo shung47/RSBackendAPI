@@ -7,7 +7,7 @@ namespace CDBAAPI.Models
 {
     public partial class TblTicketLoginInfo
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
         public string Name { get; set; }
         public string Team { get; set; }
         public string Inactive { get; set; }

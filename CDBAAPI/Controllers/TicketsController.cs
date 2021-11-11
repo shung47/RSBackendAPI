@@ -12,6 +12,8 @@ using System.Security.Principal;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
+using Microsoft.Extensions.Configuration;
+
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -25,11 +27,13 @@ namespace CDBAAPI.Controllers
     {
         private readonly DevContext _devContext;
         private readonly IMapper _mapper;
+        private readonly IConfiguration Configuration;
 
-        public TicketsController(DevContext devContext, IMapper mapper)
+        public TicketsController(DevContext devContext, IMapper mapper, IConfiguration configuration)
         {
             _devContext = devContext;
             _mapper = mapper;
+            Configuration = configuration;
         }
 
         // GET: api/<TicketsController> Get all tickets
@@ -249,7 +253,7 @@ namespace CDBAAPI.Controllers
             var claimsIdentity = User.Identity as ClaimsIdentity;
             var EmployeeId = claimsIdentity.FindFirst("EmployeeId").Value;
             var updateTicket = _devContext.TblTickets.Find(Id);
-            if (EmployeeId == updateTicket.CreatorId)
+            if (EmployeeId == updateTicket.CreatorId && updateTicket.Status!="Completed")
             {
                 updateTicket.IsDeleted = true;
                 _devContext.SaveChanges();
@@ -347,14 +351,14 @@ namespace CDBAAPI.Controllers
                 //send to director email
                 //mailMessage.To.Add(new MailboxAddress("", ""));
             }
-
+            var appUrl = Configuration["AppUrl"];
             mailMessage.From.Add(new MailboxAddress("CDBA_AUTO", "CDBA-AUTO@AVNET.COM"));
             mailMessage.Subject = "Approval Reminder";
             mailMessage.Body = new TextPart("plain")
             {
                 Text = "Hello,\n\n" +
                 "This is a reminder for you to approve the following ticket:\n" +
-                "http://localhost:3000/Tickets/Edit/" + id +
+                 appUrl + "Tickets/Edit/" + id +
                 "\n\n Best regards,"+
                 "\nCDBA Team"
             };

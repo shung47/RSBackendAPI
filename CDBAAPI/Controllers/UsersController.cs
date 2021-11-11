@@ -66,9 +66,9 @@ namespace CDBAAPI.Controllers
 
             if(users.Count() == 0)
             {
-                if(validEmployees.Any(a => a.Id == int.Parse(value.EmployeeId)))
+                if(validEmployees.Any(a => a.Id == value.EmployeeId))
                 {
-                    var validEmployee = validEmployees.Where(a => a.Id == int.Parse(value.EmployeeId)).First();
+                    var validEmployee = validEmployees.Where(a => a.Id == value.EmployeeId).First();
                     TblUser tblUser = new TblUser()
                     {
                         EmployeeId = value.EmployeeId,

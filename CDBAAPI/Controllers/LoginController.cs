@@ -1,4 +1,5 @@
 ﻿using CDBAAPI.Models;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -23,11 +24,13 @@ namespace CDBAAPI.Controllers
     {
         private readonly DevContext _devContext;
         private readonly IConfiguration _configuration;
+        private readonly IWebHostEnvironment _currentEnvironment;
 
-        public LoginController(DevContext devContext, IConfiguration configuration)
+        public LoginController(DevContext devContext, IConfiguration configuration, IWebHostEnvironment webHostEnvironment)
         {
             _devContext = devContext;
             _configuration = configuration;
+            _currentEnvironment = webHostEnvironment;
         }
 
         [HttpPost]
@@ -97,8 +100,14 @@ namespace CDBAAPI.Controllers
             }
             return Convert.ToBase64String(array);
         }
+
+        [HttpGet]
+        public IActionResult GET()
+        {
+            return Ok("The connection works. The environment is " + _currentEnvironment.EnvironmentName);
+        }
     }
-    
+
 
     public class UserResponse
     {

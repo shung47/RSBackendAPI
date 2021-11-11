@@ -184,21 +184,21 @@ namespace CDBAAPI.Models
 
                 entity.ToTable("tblTicket_LoginInfo");
 
-                entity.Property(e => e.Id).HasColumnName("ID");
+                entity.Property(e => e.Id)
+                    .IsRequired()
+                    .HasMaxLength(11)
+                    .IsUnicode(false)
+                    .HasColumnName("ID");
 
-                entity.Property(e => e.Inactive)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
+                entity.Property(e => e.Inactive).HasMaxLength(1);
 
                 entity.Property(e => e.Name)
                     .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
+                    .HasMaxLength(50);
 
                 entity.Property(e => e.Team)
                     .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
+                    .HasMaxLength(50);
             });
 
             modelBuilder.Entity<TblUser>(entity =>
