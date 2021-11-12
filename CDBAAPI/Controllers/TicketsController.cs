@@ -340,20 +340,22 @@ namespace CDBAAPI.Controllers
                     mailMessage.To.Add(new MailboxAddress(user.Name, user.EmployeeId + "@avnet.com"));
             }
 
-            if (ticket.Type != "Incident" && !ticketlogs.Any(x => x.ApprovalType == "saLeaderApproval" && x.Action == "Approved"))
+            if (ticket.Type != "Incident" && !ticketlogs.Any(x => x.ApprovalType == "saLeaderApproval" && x.Action == "Approved") && mailMessage.To == null)
             {
                 //send to SA Leader
-                //mailMessage.To.Add(new MailboxAddress("", ""));
+                mailMessage.To.Add(new MailboxAddress("043138", "@avnet.com"));
+                mailMessage.To.Add(new MailboxAddress("041086", "@avnet.com"));
             }
 
             if (ticket.Type == "Project" && mailMessage.To==null && !ticketlogs.Any(x => x.ApprovalType == "directorApproval" && x.Action == "Approved"))
             {
                 //send to director email
-                //mailMessage.To.Add(new MailboxAddress("", ""));
+                //mailMessage.To.Add(new MailboxAddress("904218", "@avnet.com"));
             }
             var appUrl = Configuration["AppUrl"];
-            mailMessage.From.Add(new MailboxAddress("CDBA_AUTO", "CDBA-AUTO@AVNET.COM"));
-            mailMessage.Subject = "Approval Reminder";
+            mailMessage.Cc.Add(new MailboxAddress(user.EmployeeId + "@avnet.com"));
+            mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
+            mailMessage.Subject = "Ticket Approval Reminder";
             mailMessage.Body = new TextPart("plain")
             {
                 Text = "Hello,\n\n" +
@@ -368,7 +370,6 @@ namespace CDBAAPI.Controllers
                 using (var smtpClient = new SmtpClient())
                 {
                     smtpClient.Connect("Smtprelay.avnet.com", 25, false);
-                    //smtpClient.Authenticate("user", "password");
                     smtpClient.Send(mailMessage);
                     smtpClient.Disconnect(true);
                 }
