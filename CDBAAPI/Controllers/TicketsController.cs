@@ -43,11 +43,13 @@ namespace CDBAAPI.Controllers
             var tickets = _devContext.TblTickets.Where(x=>x.IsDeleted==false);
             var tblUser = _devContext.TblUsers;
             List<TicketExtension> result = new List<TicketExtension>();
+            var tasks = _devContext.TblTicketTasks.Where(x => x.IsDeleted == false);
 
             try
             {
                 foreach (var ticket in tickets.ToList())
                 {
+                    var records = _devContext.TblTicketLogs.Where(x => x.TicketId == ticket.Id);
                     TicketExtension t = _mapper.Map<TicketExtension>(ticket);
                     if(!string.IsNullOrEmpty(ticket.Assignee))
                         t.AssigneeName = tblUser.Where(x => x.EmployeeId == ticket.Assignee).FirstOrDefault().Name;
@@ -61,6 +63,50 @@ namespace CDBAAPI.Controllers
                         t.PrimaryCodeReviewerName = tblUser.Where(x => x.EmployeeId == t.PrimaryCodeReviewer).FirstOrDefault().Name;
                     if (!string.IsNullOrEmpty(ticket.SecondaryCodeReviewer))
                         t.SecondaryCodeReviewerName = tblUser.Where(x => x.EmployeeId == t.SecondaryCodeReviewer).FirstOrDefault().Name;
+                    
+                    t.BusinessApproval = "Pending";
+                    t.PrimaryCodeApproval = "Pending";
+                    t.DirectorApproval = "Pending";
+                    t.SALeaderApproval = "Pending";
+                    t.SecondaryCodeApproval = "Pending";
+                    if (records.Count() > 0)
+                    {
+                        foreach (TblTicketLog record in records)
+                        {
+                            if (!record.IsDeleted && record.ApprovalType == "businessApproval")
+                            {
+                                t.BusinessApproval = record.Action;
+                                t.BusinessApprovalTime = record.ModificationDatetime;
+                            }
+
+                            if (!record.IsDeleted && record.ApprovalType == "primaryCodeApproval")
+                            {
+                                t.PrimaryCodeApproval = record.Action;
+                                t.PrimaryCodeApprovalTime = record.ModificationDatetime;
+                            }
+
+                            if (!record.IsDeleted && record.ApprovalType == "secondaryCodeApproval")
+                            {
+                                t.SecondaryCodeApproval = record.Action;
+                                t.SecondaryCodeApprovalTime = record.ModificationDatetime;
+                            }
+
+                            if (!record.IsDeleted && record.ApprovalType == "directorApproval")
+                            {
+                                t.DirectorApproval = record.Action;
+                                t.DirectorApprovalTime = record.ModificationDatetime;
+                            }
+
+                            if (!record.IsDeleted && record.ApprovalType == "saLeaderApproval")
+                            {
+                                t.SALeaderApproval = record.Action;
+                                t.SALeaderApprovalTime = record.ModificationDatetime;
+                            }
+                        }
+                    }
+
+                    t.TaskName = tasks.Where(x => x.Id == t.TaskId).FirstOrDefault().TaskName;
+
                     result.Add(t);
                 }
                 return Ok(result);
@@ -325,19 +371,19 @@ namespace CDBAAPI.Controllers
 
             if (ticket.PrimaryCodeReviewer!=null&& !ticketlogs.Any(x=>x.ApprovalType=="primaryCodeApproval" && x.Action=="Approved"))
             {
-                mailMessage.To.Add(new MailboxAddress(user.Name, user.EmployeeId+"@avnet.com"));
+                mailMessage.To.Add(new MailboxAddress(ticket.PrimaryCodeReviewer+"@avnet.com"));
             }
 
             if (ticket.SecondaryCodeReviewer != null && !ticketlogs.Any(x => x.ApprovalType == "secondaryCodeApproval" && x.Action == "Approved"))
             {
-                if(!mailMessage.To.Contains(InternetAddress.Parse(user.EmployeeId + "@avnet.com")))
-                mailMessage.To.Add(new MailboxAddress(user.Name, user.EmployeeId + "@avnet.com"));
+                if(!mailMessage.To.Contains(InternetAddress.Parse(ticket.SecondaryCodeReviewer + "@avnet.com")))
+                mailMessage.To.Add(new MailboxAddress(ticket.SecondaryCodeReviewer + "@avnet.com"));
             }
 
             if (ticket.BusinessReviewer != null && !ticketlogs.Any(x => x.ApprovalType == "businessApproval" && x.Action == "Approved"))
             {
-                if (!mailMessage.To.Contains(InternetAddress.Parse(user.EmployeeId + "@avnet.com")))
-                    mailMessage.To.Add(new MailboxAddress(user.Name, user.EmployeeId + "@avnet.com"));
+                if (!mailMessage.To.Contains(InternetAddress.Parse(ticket.BusinessReviewer + "@avnet.com")))
+                    mailMessage.To.Add(new MailboxAddress(ticket.BusinessReviewer + "@avnet.com"));
             }
 
             if (ticket.Type != "Incident" && !ticketlogs.Any(x => x.ApprovalType == "saLeaderApproval" && x.Action == "Approved") && mailMessage.To == null)

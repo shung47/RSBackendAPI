@@ -18,10 +18,11 @@ namespace CDBAAPI.Models
         }
 
         public virtual DbSet<TblDbControl> TblDbControls { get; set; }
-        public virtual DbSet<TblTask> TblTasks { get; set; }
         public virtual DbSet<TblTicket> TblTickets { get; set; }
+        public virtual DbSet<TblTicketComment> TblTicketComments { get; set; }
         public virtual DbSet<TblTicketLog> TblTicketLogs { get; set; }
         public virtual DbSet<TblTicketLoginInfo> TblTicketLoginInfos { get; set; }
+        public virtual DbSet<TblTicketTask> TblTicketTasks { get; set; }
         public virtual DbSet<TblUser> TblUsers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -52,37 +53,6 @@ namespace CDBAAPI.Models
                     .HasMaxLength(50)
                     .IsUnicode(false)
                     .HasColumnName("SA_Master");
-            });
-
-            modelBuilder.Entity<TblTask>(entity =>
-            {
-                entity.ToTable("tblTasks");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Department)
-                    .IsRequired()
-                    .HasMaxLength(25)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.ReferenceNumber)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Region)
-                    .IsRequired()
-                    .HasMaxLength(25)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Summary)
-                    .IsRequired()
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.TaskName)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<TblTicket>(entity =>
@@ -153,6 +123,31 @@ namespace CDBAAPI.Models
                     .IsUnicode(false);
             });
 
+            modelBuilder.Entity<TblTicketComment>(entity =>
+            {
+                entity.ToTable("TblTicket_Comments");
+
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.CommentContent)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CreateDateTime).HasColumnType("datetime");
+
+                entity.Property(e => e.Creator)
+                    .IsRequired()
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CreatorId)
+                    .IsRequired()
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.LastModificationDateTime).HasColumnType("datetime");
+            });
+
             modelBuilder.Entity<TblTicketLog>(entity =>
             {
                 entity.ToTable("tblTicket_Logs");
@@ -190,15 +185,63 @@ namespace CDBAAPI.Models
                     .IsUnicode(false)
                     .HasColumnName("ID");
 
-                entity.Property(e => e.Inactive).HasMaxLength(1);
+                entity.Property(e => e.Inactive)
+                    .HasMaxLength(1)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.Name)
                     .IsRequired()
-                    .HasMaxLength(50);
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.Team)
                     .IsRequired()
-                    .HasMaxLength(50);
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<TblTicketTask>(entity =>
+            {
+                entity.ToTable("tblTicket_Tasks");
+
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.CreatedDateTime).HasColumnType("datetime");
+
+                entity.Property(e => e.Creator)
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CreatorId)
+                    .IsRequired()
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Functions)
+                    .IsRequired()
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.LastModificationDateTime).HasColumnType("datetime");
+
+                entity.Property(e => e.ReferenceNumber)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Region)
+                    .IsRequired()
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Summary)
+                    .IsRequired()
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.TaskName)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<TblUser>(entity =>

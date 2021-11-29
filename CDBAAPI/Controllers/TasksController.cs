@@ -24,21 +24,21 @@ namespace CDBAAPI.Controllers
         }
         // GET: api/<TasksController>
         [HttpGet]
-        public ActionResult<IEnumerable<TblTask>> Get()
+        public ActionResult<IEnumerable<TblTicketTask>> Get()
         {
-            var result = _devContext.TblTasks.Where(x=>x.IsDeleted==false);
+            var result = _devContext.TblTicketTasks.Where(x=>x.IsDeleted==false);
             return Ok(result);
         }
 
         // GET api/<TasksController>/5
         [HttpGet("{id}")]
-        public ActionResult<TblTask> Get(int id)
+        public ActionResult<TblTicketTask> Get(int id)
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
             try
             {
-                TblTask task = _devContext.TblTasks.Where(x => x.Id == id).First();
+                TblTicketTask task = _devContext.TblTicketTasks.Where(x => x.Id == id).First();
                 return Ok(task);
             }
             catch(Exception ex)
@@ -49,17 +49,25 @@ namespace CDBAAPI.Controllers
 
         // POST api/<TasksController>
         [HttpPost]
-        public IActionResult Post([FromBody] TblTask value)
+        public IActionResult Post([FromBody] TblTicketTask value)
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
-            TblTask task = new TblTask
+            var employeeId = claimsIdentity.FindFirst("EmployeeId").Value;
+
+            var employee = claimsIdentity.FindFirst("Name").Value;
+
+            TblTicketTask task = new TblTicketTask
             {
                 TaskName = value.TaskName,
                 Region = value.Region,
-                Department = value.Department,
+                Functions = value.Functions,
                 Summary = value.Summary,
                 ReferenceNumber = value.ReferenceNumber,
+                CreatorId = employeeId,
+                Creator = employee,
+                CreatedDateTime = DateTime.Now,
+                LastModificationDateTime = DateTime.Now,
                 IsDeleted = false
             };
 
@@ -78,18 +86,18 @@ namespace CDBAAPI.Controllers
 
         // PUT api/<TasksController>/5
         [HttpPut("{id}")]
-        public IActionResult Put(int id, [FromBody] TblTask value)
+        public IActionResult Put(int id, [FromBody] TblTicketTask value)
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
-            var task = _devContext.TblTasks.Where(x => x.Id == id).First();
+            var task = _devContext.TblTicketTasks.Where(x => x.Id == id).First();
 
             task.TaskName = value.TaskName;
             task.Region = value.Region;
-            task.Department = value.Department;
+            task.Functions = value.Functions;
             task.Summary = value.Summary;
             task.ReferenceNumber = value.ReferenceNumber;
-            
+            task.LastModificationDateTime = DateTime.Now;
             try
             {
                 _devContext.SaveChanges();
@@ -107,7 +115,7 @@ namespace CDBAAPI.Controllers
         {
             try
             {
-                var task = _devContext.TblTasks.Find(id);
+                var task = _devContext.TblTicketTasks.Find(id);
                 task.IsDeleted = true;
                 _devContext.SaveChanges();
                 return Ok();
