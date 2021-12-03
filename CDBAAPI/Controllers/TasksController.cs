@@ -68,7 +68,9 @@ namespace CDBAAPI.Controllers
                 Creator = employee,
                 CreatedDateTime = DateTime.Now,
                 LastModificationDateTime = DateTime.Now,
-                IsDeleted = false
+                IsDeleted = false,
+                Status = "ToDo",
+                Priority = value.Priority
             };
 
             try
@@ -98,6 +100,8 @@ namespace CDBAAPI.Controllers
             task.Summary = value.Summary;
             task.ReferenceNumber = value.ReferenceNumber;
             task.LastModificationDateTime = DateTime.Now;
+            task.Priority = value.Priority;
+            task.Status = value.Status;
             try
             {
                 _devContext.SaveChanges();

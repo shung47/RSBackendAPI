@@ -41,7 +41,7 @@ namespace CDBAAPI.Controllers
         public ActionResult<IEnumerable<TblTicket>> Get()
         {
             var tickets = _devContext.TblTickets.Where(x=>x.IsDeleted==false);
-            var tblUser = _devContext.TblUsers;
+            var tblUser = _devContext.TblTicketUsers;
             List<TicketExtension> result = new List<TicketExtension>();
             var tasks = _devContext.TblTicketTasks.Where(x => x.IsDeleted == false);
 
@@ -127,11 +127,11 @@ namespace CDBAAPI.Controllers
 
             TicketExtension result = _mapper.Map<TicketExtension>(ticket);
 
-            var dbControl = _devContext.TblDbControls;
+            var dbControl = _devContext.TblTicketDbcontrols;
 
-            List<TblDbControl> dbControlList = _mapper.Map<List<TblDbControl>>(dbControl);
+            List<TblTicketDbcontrol> dbControlList = _mapper.Map<List<TblTicketDbcontrol>>(dbControl);
 
-            var creator = _devContext.TblUsers.Where(x => x.EmployeeId == ticket.CreatorId.ToString()).FirstOrDefault();
+            var creator = _devContext.TblTicketUsers.Where(x => x.EmployeeId == ticket.CreatorId.ToString()).FirstOrDefault();
             if (result!=null)
             {
                 result.BusinessApproval = "Pending";
@@ -139,6 +139,7 @@ namespace CDBAAPI.Controllers
                 result.DirectorApproval = "Pending";
                 result.SALeaderApproval = "Pending";
                 result.SecondaryCodeApproval = "Pending";
+                result.DbMasterApproval = "Pending";
 
                 var records = _devContext.TblTicketLogs.Where(x => x.TicketId == Id);
                 if(records.Count()>0)
@@ -174,6 +175,12 @@ namespace CDBAAPI.Controllers
                             result.SALeaderApproval = record.Action;
                             result.SALeaderApprovalTime = record.ModificationDatetime;
                         }
+
+                        if(!record.IsDeleted && record.ApprovalType == "dbApproval")
+                        {
+                            result.DbMasterApproval = record.Action;
+                            result.DbMasterApprovalTime = record.ModificationDatetime;
+                        }
                     }
                 }
 
@@ -186,6 +193,17 @@ namespace CDBAAPI.Controllers
             {
                 return NotFound();
             }
+        }
+
+        //Get all tickets under the same task
+        [HttpGet("Task/{id}")]
+        public ActionResult<TicketExtension> GetByTask(int Id)
+        {
+            var tickets = _devContext.TblTickets.Where(x => x.TaskId == Id);
+
+            var result = _mapper.Map<List<TicketExtension>>(tickets);
+
+            return Ok(result);
         }
 
         // POST api/<TicketsController> Create a new ticket
@@ -211,7 +229,7 @@ namespace CDBAAPI.Controllers
                 CreatedDateTime = DateTime.Now,
                 LastModificationDateTime = DateTime.Now,
                 TaskId = value.TaskId,
-                IsDeleted = false
+                IsDeleted = false,             
             };
             try
             {
@@ -243,30 +261,35 @@ namespace CDBAAPI.Controllers
             if (value.Status == "Completed")
             {
 
-                var ticketlogs = _devContext.TblTicketLogs.Where(x => x.TicketId == Id && x.IsDeleted == false && x.Action == "Approved");
+                var ticketlogs = _devContext.TblTicketLogs.Where(x => x.TicketId == Id && x.IsDeleted == false && (x.Action == "Approved"||x.Action=="Completed"));
 
                 if (value.BusinessReview && !ticketlogs.Any(X => X.ApprovalType == "businessApproval"))
                 {
-                    return NotFound("Can't save the ticket. Make sure it is approved by every essential peroson.");
+                    return NotFound("Can't save the ticket. It requires a business approval");
                 }
                 if (value.IsRpa && !ticketlogs.Any(x => x.ApprovalType == "primaryCodeApproval"))
                 {
-                    return NotFound("Can't save the ticket. Make sure it is approved by every essential peroson.");
+                    return NotFound("Can't save the ticket. It requires a code review approval");
                 }
 
                 if (value.SecondaryCodeReviewer != null && !ticketlogs.Any(x => x.ApprovalType == "secondaryCodeApproval"))
                 {
-                    return NotFound("Can't save the ticket. Make sure it is approved by every essential peroson.");
+                    return NotFound("Can't save the ticket. It requires a secondary code review approval");
+                }
+
+                if(value.Dbmaster!="0"&& !ticketlogs.Any(x=>x.ApprovalType=="dbApproval"))
+                {
+                    return NotFound("Can't save the ticket. It requires a SA master approval");
                 }
 
                 if (value.Type == "Project" && !ticketlogs.Any(x => x.ApprovalType == "directorApproval"))
                 {
-                    return NotFound("Can't save the ticket. Make sure it is approved by every essential peroson.");
+                    return NotFound("Can't save the ticket. It requires CY approval");
                 }
 
                 if (value.Type != "Incident" && !ticketlogs.Any(x => x.ApprovalType == "saLeaderApproval"))
                 {
-                    return NotFound("Can't save the ticket. Make sure it is approved by every essential peroson.");
+                    return NotFound("Can't save the ticket. It requires a SA leader approval");
                 }
                 try
                 {
@@ -361,7 +384,7 @@ namespace CDBAAPI.Controllers
 
             var employeeId = claimsIdentity.FindFirst("EmployeeId").Value;
 
-            var user = _devContext.TblUsers.Where(x => x.EmployeeId == employeeId).FirstOrDefault();
+            var user = _devContext.TblTicketUsers.Where(x => x.EmployeeId == employeeId).FirstOrDefault();
 
             var ticket = _devContext.TblTickets.Where(x => x.Id == id).FirstOrDefault();
             

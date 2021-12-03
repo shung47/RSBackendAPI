@@ -35,9 +35,10 @@ namespace CDBAAPI
         {
             //services.AddAuthentication(IISDefaults.AuthenticationScheme);
             services.AddControllers();
+            services.AddControllers().AddNewtonsoftJson();
             services.AddCors();
             services.AddAutoMapper(typeof(Startup));
-            services.AddControllers().AddNewtonsoftJson();
+            
             if(CurrentEnvironment.IsDevelopment())
             {
                 services.AddDbContext<DevContext>(options =>
@@ -69,7 +70,6 @@ namespace CDBAAPI
             {
                 app.UseDeveloperExceptionPage();
             }
-
             app.UseHttpsRedirection();
 
             //Order is matter

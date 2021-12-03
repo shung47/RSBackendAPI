@@ -17,13 +17,13 @@ namespace CDBAAPI.Models
         {
         }
 
-        public virtual DbSet<TblDbControl> TblDbControls { get; set; }
         public virtual DbSet<TblTicket> TblTickets { get; set; }
         public virtual DbSet<TblTicketComment> TblTicketComments { get; set; }
+        public virtual DbSet<TblTicketDbcontrol> TblTicketDbcontrols { get; set; }
         public virtual DbSet<TblTicketLog> TblTicketLogs { get; set; }
         public virtual DbSet<TblTicketLoginInfo> TblTicketLoginInfos { get; set; }
         public virtual DbSet<TblTicketTask> TblTicketTasks { get; set; }
-        public virtual DbSet<TblUser> TblUsers { get; set; }
+        public virtual DbSet<TblTicketUser> TblTicketUsers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -37,23 +37,6 @@ namespace CDBAAPI.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "Chinese_Taiwan_Stroke_CI_AS");
-
-            modelBuilder.Entity<TblDbControl>(entity =>
-            {
-                entity.HasNoKey();
-
-                entity.ToTable("tblDB_Control");
-
-                entity.Property(e => e.Database)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.SaMaster)
-                    .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasColumnName("SA_Master");
-            });
 
             modelBuilder.Entity<TblTicket>(entity =>
             {
@@ -148,6 +131,27 @@ namespace CDBAAPI.Models
                 entity.Property(e => e.LastModificationDateTime).HasColumnType("datetime");
             });
 
+            modelBuilder.Entity<TblTicketDbcontrol>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("tblTicket_DBControl");
+
+                entity.Property(e => e.Database)
+                    .IsRequired()
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.EmployeeId)
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Samaster)
+                    .HasMaxLength(25)
+                    .IsUnicode(false)
+                    .HasColumnName("SAMaster");
+            });
+
             modelBuilder.Entity<TblTicketLog>(entity =>
             {
                 entity.ToTable("tblTicket_Logs");
@@ -218,17 +222,25 @@ namespace CDBAAPI.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.Functions)
-                    .IsRequired()
                     .HasMaxLength(255)
                     .IsUnicode(false);
 
                 entity.Property(e => e.LastModificationDateTime).HasColumnType("datetime");
+
+                entity.Property(e => e.Priority)
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.ReferenceNumber)
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Region)
+                    .IsRequired()
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Status)
                     .IsRequired()
                     .HasMaxLength(25)
                     .IsUnicode(false);
@@ -244,9 +256,9 @@ namespace CDBAAPI.Models
                     .IsUnicode(false);
             });
 
-            modelBuilder.Entity<TblUser>(entity =>
+            modelBuilder.Entity<TblTicketUser>(entity =>
             {
-                entity.ToTable("tblUsers");
+                entity.ToTable("tblTicket_Users");
 
                 entity.Property(e => e.Id).HasColumnName("ID");
 

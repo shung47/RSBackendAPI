@@ -34,7 +34,7 @@ namespace CDBAAPI.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<TblUser>> Get()
         {
-            var result = _devContext.TblUsers;
+            var result = _devContext.TblTicketUsers;
             //var result = User.Claims.ToList().First().Value;
             return Ok(result);
         }
@@ -56,7 +56,7 @@ namespace CDBAAPI.Controllers
         [AllowAnonymous]
         public IActionResult Post([FromBody] TblUser value)
         {
-            var users = _devContext.TblUsers.Where(a => a.EmployeeId==value.EmployeeId);
+            var users = _devContext.TblTicketUsers.Where(a => a.EmployeeId==value.EmployeeId);
             var validEmployees  = _devContext.TblTicketLoginInfos.Where(a=>a.Inactive == null && (a.Team == "HK"|| a.Team == "TW" || a.Team == "SG" || a.Team == "CN"));
 
             if(users.Count()>0)
@@ -69,7 +69,7 @@ namespace CDBAAPI.Controllers
                 if(validEmployees.Any(a => a.Id == value.EmployeeId))
                 {
                     var validEmployee = validEmployees.Where(a => a.Id == value.EmployeeId).First();
-                    TblUser tblUser = new TblUser()
+                    TblTicketUser tblUser = new TblTicketUser()
                     {
                         EmployeeId = value.EmployeeId,
                         Password = EncryptString(value.Password),
@@ -77,7 +77,7 @@ namespace CDBAAPI.Controllers
                         Team = validEmployee.Team
                     };
                     
-                    _devContext.TblUsers.Add(tblUser);
+                    _devContext.TblTicketUsers.Add(tblUser);
                     _devContext.SaveChanges();
 
                     return Ok();

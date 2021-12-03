@@ -18,5 +18,7 @@ namespace CDBAAPI.Models
         public string Creator { get; set; }
         public DateTime? LastModificationDateTime { get; set; }
         public string CreatorId { get; set; }
+        public string Priority { get; set; }
+        public string Status { get; set; }
     }
 }

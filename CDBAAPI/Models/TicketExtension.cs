@@ -13,12 +13,14 @@ namespace CDBAAPI.Models
         public string PrimaryCodeApproval { get; set; }
         public string SecondaryCodeApproval { get; set; }
         public string BusinessApproval { get; set; }
-        public List<TblDbControl> DBControlList { get;set; }
+        public string DbMasterApproval { get; set; }
+        public List<TblTicketDbcontrol> DBControlList { get;set; }
         public DateTime DirectorApprovalTime { get; set; }
         public DateTime SALeaderApprovalTime { get; set; }
         public DateTime PrimaryCodeApprovalTime { get; set; }
         public DateTime SecondaryCodeApprovalTime { get; set; }
         public DateTime BusinessApprovalTime { get; set; }
+        public DateTime DbMasterApprovalTime { get; set; }
         public string AssigneeName { get; set; }
         public string DeveloperName { get; set; }
         public string SecondaryDeveloperName { get; set; }

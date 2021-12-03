@@ -60,7 +60,7 @@ namespace CDBAAPI.Controllers
             {
                 _devContext.Add(ticketComment);
                 _devContext.SaveChanges();
-                return Ok();
+                return Ok(ticketComment);
             }
             catch (Exception ex)
             {
