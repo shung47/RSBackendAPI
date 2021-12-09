@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Cors;
 
 namespace CDBAAPI
 {
@@ -34,9 +35,14 @@ namespace CDBAAPI
         public void ConfigureServices(IServiceCollection services)
         {
             //services.AddAuthentication(IISDefaults.AuthenticationScheme);
-            services.AddControllers();
             services.AddControllers().AddNewtonsoftJson();
-            services.AddCors();
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(
+                    builder => builder.AllowAnyOrigin().AllowAnyHeader()
+                                                  .AllowAnyMethod());
+            });
+            services.AddControllers();
             services.AddAutoMapper(typeof(Startup));
             
             if(CurrentEnvironment.IsDevelopment())
@@ -74,15 +80,15 @@ namespace CDBAAPI
 
             //Order is matter
             app.UseRouting();
-            //app.UseCors("CorsPolicy");
-            app.UseCors(x => x
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .SetIsOriginAllowed(origin => true) // allow any origin
-                .AllowCredentials());
+            app.UseCors();
+            //app.UseCors(x => x
+            //    .AllowAnyMethod()
+            //    .AllowAnyHeader()
+            //    .SetIsOriginAllowed(origin => true) // allow any origin
+            //    .AllowCredentials());
             app.UseAuthentication();
             app.UseAuthorization();
-
+            
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

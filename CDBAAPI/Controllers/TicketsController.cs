@@ -13,6 +13,7 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
 
 
 
@@ -44,7 +45,7 @@ namespace CDBAAPI.Controllers
             var tblUser = _devContext.TblTicketUsers;
             List<TicketExtension> result = new List<TicketExtension>();
             var tasks = _devContext.TblTicketTasks.Where(x => x.IsDeleted == false);
-
+            
             try
             {
                 foreach (var ticket in tickets.ToList())
@@ -117,13 +118,13 @@ namespace CDBAAPI.Controllers
             }           
         }
 
-        // GET api/<TicketsController>/5
+
         [HttpGet("{id}")]
         public ActionResult<TicketExtension> Get(int Id)
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
-            TblTicket ticket = _devContext.TblTickets.Where(x=>x.Id == Id).FirstOrDefault();
+            TblTicket ticket = _devContext.TblTickets.Where(x => x.Id == Id).FirstOrDefault();
 
             TicketExtension result = _mapper.Map<TicketExtension>(ticket);
 
@@ -132,7 +133,7 @@ namespace CDBAAPI.Controllers
             List<TblTicketDbcontrol> dbControlList = _mapper.Map<List<TblTicketDbcontrol>>(dbControl);
 
             var creator = _devContext.TblTicketUsers.Where(x => x.EmployeeId == ticket.CreatorId.ToString()).FirstOrDefault();
-            if (result!=null)
+            if (result != null)
             {
                 result.BusinessApproval = "Pending";
                 result.PrimaryCodeApproval = "Pending";
@@ -142,7 +143,7 @@ namespace CDBAAPI.Controllers
                 result.DbMasterApproval = "Pending";
 
                 var records = _devContext.TblTicketLogs.Where(x => x.TicketId == Id);
-                if(records.Count()>0)
+                if (records.Count() > 0)
                 {
                     foreach (TblTicketLog record in records)
                     {
@@ -176,7 +177,7 @@ namespace CDBAAPI.Controllers
                             result.SALeaderApprovalTime = record.ModificationDatetime;
                         }
 
-                        if(!record.IsDeleted && record.ApprovalType == "dbApproval")
+                        if (!record.IsDeleted && record.ApprovalType == "dbApproval")
                         {
                             result.DbMasterApproval = record.Action;
                             result.DbMasterApprovalTime = record.ModificationDatetime;
@@ -377,33 +378,57 @@ namespace CDBAAPI.Controllers
             }
         }
 
-        [HttpGet("SendEmail/{id}")]
-        public IActionResult SendEmail(int id)
+        [HttpPost("SendEmail/{id}")]
+        public IActionResult SendEmail(int id, TblTicket ticket)
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
             var employeeId = claimsIdentity.FindFirst("EmployeeId").Value;
 
             var user = _devContext.TblTicketUsers.Where(x => x.EmployeeId == employeeId).FirstOrDefault();
-
-            var ticket = _devContext.TblTickets.Where(x => x.Id == id).FirstOrDefault();
             
             var ticketlogs = _devContext.TblTicketLogs.Where(x => x.TicketId == id && x.IsDeleted == false);
 
             var mailMessage = new MimeMessage();
 
-            if (ticket.PrimaryCodeReviewer!=null&& !ticketlogs.Any(x=>x.ApprovalType=="primaryCodeApproval" && x.Action=="Approved"))
+            var appUrl = Configuration["AppUrl"];
+
+            if (String.IsNullOrEmpty(ticket.PrimaryCodeReviewer) && ticket.Type != "Incident")
+            {
+                mailMessage.To.Add(new MailboxAddress("043138", "@avnet.com"));
+                mailMessage.To.Add(new MailboxAddress("041086", "@avnet.com"));              
+                mailMessage.Cc.Add(new MailboxAddress(user.EmployeeId + "@avnet.com"));
+                mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
+                mailMessage.Subject = "Ticket Reminder";
+                mailMessage.Body = new TextPart("plain")
+                {
+                    Text = "Hello dear Kam and Wenze,\n\n" +
+                    "The following ticket is ready to be reviewed. Please assign reiewers to do the code review.\n" +
+                     appUrl + "Tickets/Edit/" + id +
+                    "\n\n Best regards," +
+                    "\nCDBA Team"
+                };
+                using (var smtpClient = new SmtpClient())
+                {
+                    smtpClient.Connect("Smtprelay.avnet.com", 25, false);
+                    smtpClient.Send(mailMessage);
+                    smtpClient.Disconnect(true);
+                }
+                return Ok();
+            }
+
+            if (!String.IsNullOrEmpty(ticket.PrimaryCodeReviewer) && !ticketlogs.Any(x=>x.ApprovalType=="primaryCodeApproval" && x.Action=="Approved"))
             {
                 mailMessage.To.Add(new MailboxAddress(ticket.PrimaryCodeReviewer+"@avnet.com"));
             }
 
-            if (ticket.SecondaryCodeReviewer != null && !ticketlogs.Any(x => x.ApprovalType == "secondaryCodeApproval" && x.Action == "Approved"))
+            if (!String.IsNullOrEmpty(ticket.SecondaryCodeReviewer) && !ticketlogs.Any(x => x.ApprovalType == "secondaryCodeApproval" && x.Action == "Approved"))
             {
                 if(!mailMessage.To.Contains(InternetAddress.Parse(ticket.SecondaryCodeReviewer + "@avnet.com")))
                 mailMessage.To.Add(new MailboxAddress(ticket.SecondaryCodeReviewer + "@avnet.com"));
             }
 
-            if (ticket.BusinessReviewer != null && !ticketlogs.Any(x => x.ApprovalType == "businessApproval" && x.Action == "Approved"))
+            if (!String.IsNullOrEmpty(ticket.BusinessReviewer) && !ticketlogs.Any(x => x.ApprovalType == "businessApproval" && x.Action == "Approved"))
             {
                 if (!mailMessage.To.Contains(InternetAddress.Parse(ticket.BusinessReviewer + "@avnet.com")))
                     mailMessage.To.Add(new MailboxAddress(ticket.BusinessReviewer + "@avnet.com"));
@@ -421,7 +446,7 @@ namespace CDBAAPI.Controllers
                 //send to director email
                 //mailMessage.To.Add(new MailboxAddress("904218", "@avnet.com"));
             }
-            var appUrl = Configuration["AppUrl"];
+
             mailMessage.Cc.Add(new MailboxAddress(user.EmployeeId + "@avnet.com"));
             mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
             mailMessage.Subject = "Ticket Approval Reminder";
@@ -442,9 +467,21 @@ namespace CDBAAPI.Controllers
                     smtpClient.Send(mailMessage);
                     smtpClient.Disconnect(true);
                 }
+                return Ok();
             }
-            return Ok();
+            else
+            {
+                return NotFound("There is no approver for this ticket");
+            }
+            
         }
+
+        [HttpPost("UploadFile")]
+        public string UploadFile([FromForm] ICollection<IFormFile> files)
+        {
+            return $"got {files.Count} files";
+        }
+
 
         public void UpdateTicket(int Id, TblTicket value)
         {
