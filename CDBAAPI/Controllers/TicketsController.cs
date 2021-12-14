@@ -14,6 +14,8 @@ using MailKit.Security;
 using MimeKit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
 
 
 
@@ -29,12 +31,32 @@ namespace CDBAAPI.Controllers
         private readonly DevContext _devContext;
         private readonly IMapper _mapper;
         private readonly IConfiguration Configuration;
+        private readonly string _folder;
 
-        public TicketsController(DevContext devContext, IMapper mapper, IConfiguration configuration)
+        private readonly static Dictionary<string, string> _contentTypes = new Dictionary<string, string>
+        {
+            {".txt", "text/plain"},
+                {".pdf", "application/pdf"},
+                {".doc", "application/vnd.ms-word"},
+                {".docx", "application/vnd.ms-word"},
+                {".xls", "application/vnd.ms-excel"},
+                {".xlsx", "application/vnd.openxmlformats officedocument.spreadsheetml.sheet"},
+                {".xlsb", "application/vnd.openxmlformats officedocument.spreadsheetml.sheet"},
+                {".png", "image/png"},
+                {".jpg", "image/jpeg"},
+                {".jpeg", "image/jpeg"},
+                {".gif", "image/gif"},
+                {".csv", "text/csv"},
+                {".pptx","application/vnd.ms-powerpoint" },
+                {".ppt","application/vnd.ms-powerpoint" }
+        };
+
+        public TicketsController(DevContext devContext, IMapper mapper, IConfiguration configuration, IHostingEnvironment env)
         {
             _devContext = devContext;
             _mapper = mapper;
             Configuration = configuration;
+            _folder = $@"{env.WebRootPath}\RequestSystemFiles";
         }
 
         // GET: api/<TicketsController> Get all tickets
@@ -476,10 +498,72 @@ namespace CDBAAPI.Controllers
             
         }
 
-        [HttpPost("UploadFile")]
-        public string UploadFile([FromForm] ICollection<IFormFile> files)
+        [HttpPost("UploadFile/{id}")]
+        public IActionResult UploadFile([FromForm] List<IFormFile> files, int id)
         {
-            return $"got {files.Count} files";
+            try
+            {
+                var size = files.Sum(f => f.Length);
+
+                foreach (var file in files)
+                {
+                    if (file.Length > 0)
+                    {
+
+                        if (!Directory.Exists($@"{_folder}\{id}"))
+                        {
+                            Directory.CreateDirectory($@"{_folder}\{id}");
+                        }
+                        var path = $@"{_folder}\{id}\{file.FileName}";
+                        using (var stream = System.IO.File.Create(path))
+                        {
+                            file.CopyTo(stream);
+                        }
+                    }
+                }
+
+                return Ok("Uploaded file successfully");
+            }
+            catch(Exception ex)
+            {
+                return NotFound("Fail to upload file:" + ex);
+            }
+
+        }
+
+        [HttpGet("DownloadFile/{id}/{fileName}")]
+        [AllowAnonymous]
+        public  IActionResult Download(string fileName, int id)
+        {
+            if (string.IsNullOrEmpty(fileName))
+            {
+                return NotFound();
+            }
+
+            var path = $@"{_folder}\{id}\{fileName}";
+            var memoryStream = new MemoryStream();
+            using (var stream = new FileStream(path, FileMode.Open))
+            {
+                 stream.CopyTo(memoryStream);
+            }
+            memoryStream.Seek(0, SeekOrigin.Begin);
+
+            // 回傳檔案到 Client 需要附上 Content Type，否則瀏覽器會解析失敗。
+            var x = _contentTypes[Path.GetExtension(path).ToLowerInvariant()];
+            return File(memoryStream, x, fileName);
+        }
+
+        [HttpGet("GetFiles/{id}")]
+        public IActionResult GetFiles(int id)
+        {
+            List<string> result = new List<string>();
+            var path = $@"{_folder}\{id}";
+            foreach (string file in Directory.EnumerateFiles(path,"*",SearchOption.AllDirectories))
+            {
+                result.Add(Path.GetFileName(file));
+            }
+
+            return Ok(result);
         }
 
 
