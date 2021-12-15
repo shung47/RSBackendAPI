@@ -41,14 +41,16 @@ namespace CDBAAPI.Controllers
                 {".docx", "application/vnd.ms-word"},
                 {".xls", "application/vnd.ms-excel"},
                 {".xlsx", "application/vnd.openxmlformats officedocument.spreadsheetml.sheet"},
-                {".xlsb", "application/vnd.openxmlformats officedocument.spreadsheetml.sheet"},
+                {".xlsb", "application/vnd.ms-excel.sheet.binary.macroEnabled.12"},
+                {"xlsm", "application/vnd.ms-excel.sheet.macroEnabled.12" },
                 {".png", "image/png"},
                 {".jpg", "image/jpeg"},
                 {".jpeg", "image/jpeg"},
                 {".gif", "image/gif"},
                 {".csv", "text/csv"},
-                {".pptx","application/vnd.ms-powerpoint" },
-                {".ppt","application/vnd.ms-powerpoint" }
+                {".pptx","application/vnd.openxmlformats-officedocument.presentationml.presentation" },
+                {".ppt","application/vnd.ms-powerpoint" },
+                {".zip", "application/zip" }
         };
 
         public TicketsController(DevContext devContext, IMapper mapper, IConfiguration configuration, IHostingEnvironment env)
@@ -417,17 +419,17 @@ namespace CDBAAPI.Controllers
 
             if (String.IsNullOrEmpty(ticket.PrimaryCodeReviewer) && ticket.Type != "Incident")
             {
-                mailMessage.To.Add(new MailboxAddress("043138", "@avnet.com"));
-                mailMessage.To.Add(new MailboxAddress("041086", "@avnet.com"));              
+                mailMessage.To.Add(new MailboxAddress("043138"+"@avnet.com"));
+                mailMessage.To.Add(new MailboxAddress("041086"+"@avnet.com"));              
                 mailMessage.Cc.Add(new MailboxAddress(user.EmployeeId + "@avnet.com"));
                 mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
                 mailMessage.Subject = "Ticket Reminder";
                 mailMessage.Body = new TextPart("plain")
                 {
-                    Text = "Hello dear Kam and Wenze,\n\n" +
-                    "The following ticket is ready to be reviewed. Please assign reiewers to do the code review.\n" +
+                    Text = "Hi Kam and Wenze,\n\n" +
+                    "The following ticket is ready to be reviewed. Please assign reviewers to do the code review.\n" +
                      appUrl + "Tickets/Edit/" + id +
-                    "\n\n Best regards," +
+                    "\n\nBest regards," +
                     "\nCDBA Team"
                 };
                 using (var smtpClient = new SmtpClient())
@@ -459,14 +461,14 @@ namespace CDBAAPI.Controllers
             if (ticket.Type != "Incident" && !ticketlogs.Any(x => x.ApprovalType == "saLeaderApproval" && x.Action == "Approved") && mailMessage.To == null)
             {
                 //send to SA Leader
-                mailMessage.To.Add(new MailboxAddress("043138", "@avnet.com"));
-                mailMessage.To.Add(new MailboxAddress("041086", "@avnet.com"));
+                mailMessage.To.Add(new MailboxAddress("043138"+"@avnet.com"));
+                mailMessage.To.Add(new MailboxAddress("041086"+"@avnet.com"));
             }
 
             if (ticket.Type == "Project" && mailMessage.To==null && !ticketlogs.Any(x => x.ApprovalType == "directorApproval" && x.Action == "Approved"))
             {
                 //send to director email
-                //mailMessage.To.Add(new MailboxAddress("904218", "@avnet.com"));
+                //mailMessage.To.Add(new MailboxAddress("904218"+"@avnet.com"));
             }
 
             mailMessage.Cc.Add(new MailboxAddress(user.EmployeeId + "@avnet.com"));
