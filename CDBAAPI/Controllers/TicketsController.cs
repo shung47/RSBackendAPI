@@ -402,6 +402,66 @@ namespace CDBAAPI.Controllers
             }
         }
 
+        [HttpGet("BusinessReviewList/{id}")]
+        public IActionResult BusinessReviewList(int id)
+        {
+            try
+            {
+                var oldBusinessReviewList = _devContext.TblTicketBusinessReviewLists.Where(x => x.TicketId == id && x.IsDeleted == false).FirstOrDefault();
+                if (oldBusinessReviewList != null)
+                    return Ok(oldBusinessReviewList.Answers);
+            }
+            finally
+            {
+
+            }
+            return Ok();
+        }
+
+        [HttpPost("BusinessReviewList/{id}")]
+        public IActionResult BusinessReviewList(int id, [FromBody] Newtonsoft.Json.Linq.JObject answers)
+        {
+            if (answers == null)
+            {
+                return NotFound();
+            }
+
+            var claimsIdentity = User.Identity as ClaimsIdentity;
+
+            var employeeId = claimsIdentity.FindFirst("EmployeeId").Value;
+
+            var user = _devContext.TblTicketUsers.Where(x => x.EmployeeId == employeeId).FirstOrDefault().Name;
+
+            try
+            {
+                var oldBusinessReviewList = _devContext.TblTicketBusinessReviewLists.Where(x => x.TicketId == id && x.IsDeleted == false).FirstOrDefault();
+
+                if(oldBusinessReviewList!=null)
+                {
+                    oldBusinessReviewList.IsDeleted = true;
+                    //_devContext.SaveChanges();
+                }              
+            }
+            finally
+            {
+
+            }
+            
+            var businessReviewList = new TblTicketBusinessReviewList()
+            {
+                TicketId = id,
+                Reviewer = user,
+                ReviewerId = employeeId,
+                CreatedDateTime = DateTime.Now,
+                Answers = answers.ToString(),
+                IsDeleted = false
+            };
+
+            _devContext.Add(businessReviewList);
+            _devContext.SaveChanges();
+            return Ok();
+        }
+
         [HttpPost("SendEmail/{id}")]
         public IActionResult SendEmail(int id, TblTicket ticket)
         {
@@ -560,12 +620,18 @@ namespace CDBAAPI.Controllers
         {
             List<string> result = new List<string>();
             var path = $@"{_folder}\{id}";
-            foreach (string file in Directory.EnumerateFiles(path,"*",SearchOption.AllDirectories))
+            try
             {
-                result.Add(Path.GetFileName(file));
-            }
+                foreach (string file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+                {
+                    result.Add(Path.GetFileName(file));
+                }
+                return Ok(result);
 
-            return Ok(result);
+            }catch(Exception ex)
+            {
+                return Ok();
+            }                   
         }
 
 
@@ -599,8 +665,6 @@ namespace CDBAAPI.Controllers
         }
 
     }
-
-
 
     public class TicketApproval
     {
