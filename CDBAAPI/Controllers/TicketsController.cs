@@ -153,7 +153,7 @@ namespace CDBAAPI.Controllers
             TicketExtension result = _mapper.Map<TicketExtension>(ticket);
 
             var dbControl = _devContext.TblTicketDbcontrols;
-
+            var users = _devContext.TblTicketUsers;
             List<TblTicketDbcontrol> dbControlList = _mapper.Map<List<TblTicketDbcontrol>>(dbControl);
 
             var creator = _devContext.TblTicketUsers.Where(x => x.EmployeeId == ticket.CreatorId.ToString()).FirstOrDefault();
@@ -282,6 +282,10 @@ namespace CDBAAPI.Controllers
                 return NotFound("You can't modify a completed ticket");
             }
 
+            if(ticket.Status=="Reviewing"&&(value.Status=="UnderDevelopment"||value.Status=="OnHold"))
+            {
+                return NotFound("You can't change a reviewing ticket back to the previous status");
+            }
 
             if (value.Status == "Completed")
             {

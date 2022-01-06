@@ -36,7 +36,7 @@ namespace CDBAAPI.Controllers
         {
             var result = _devContext.TblTicketUsers;
             //var result = User.Claims.ToList().First().Value;
-            return Ok(result);
+            return Ok(result.OrderBy(x=>x.Name));
         }
 
         // GET api/<UsersController>/5

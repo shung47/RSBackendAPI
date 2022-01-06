@@ -23,6 +23,7 @@ namespace CDBAAPI.Models
         public virtual DbSet<TblTicketDbcontrol> TblTicketDbcontrols { get; set; }
         public virtual DbSet<TblTicketLog> TblTicketLogs { get; set; }
         public virtual DbSet<TblTicketLoginInfo> TblTicketLoginInfos { get; set; }
+        public virtual DbSet<TblTicketModifiedTable> TblTicketModifiedTables { get; set; }
         public virtual DbSet<TblTicketTask> TblTicketTasks { get; set; }
         public virtual DbSet<TblTicketUser> TblTicketUsers { get; set; }
 
@@ -112,7 +113,7 @@ namespace CDBAAPI.Models
                 entity.ToTable("tblTicket_BusinessReviewList");
 
                 entity.Property(e => e.Answers)
-                    .HasMaxLength(255)
+                    .HasMaxLength(1000)
                     .IsUnicode(false);
 
                 entity.Property(e => e.CreatedDateTime).HasColumnType("datetime");
@@ -221,6 +222,37 @@ namespace CDBAAPI.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.Team)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<TblTicketModifiedTable>(entity =>
+            {
+                entity.ToTable("TblTicket_ModifiedTables");
+
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.CreateDateTime).HasColumnType("datetime");
+
+                entity.Property(e => e.Creator)
+                    .IsRequired()
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CreatorId)
+                    .IsRequired()
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.DatabaseName)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.LastModificationDateTime).HasColumnType("datetime");
+
+                entity.Property(e => e.TableName)
                     .IsRequired()
                     .HasMaxLength(50)
                     .IsUnicode(false);
