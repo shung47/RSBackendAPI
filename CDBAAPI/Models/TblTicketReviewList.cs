@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace CDBAAPI.Models
 {
-    public partial class TblTicketBusinessReviewList
+    public partial class TblTicketReviewList
     {
         public int Id { get; set; }
         public int TicketId { get; set; }
@@ -14,5 +14,6 @@ namespace CDBAAPI.Models
         public DateTime CreatedDateTime { get; set; }
         public string Answers { get; set; }
         public bool IsDeleted { get; set; }
+        public string ReviewType { get; set; }
     }
 }

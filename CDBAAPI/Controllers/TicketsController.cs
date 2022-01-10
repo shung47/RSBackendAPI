@@ -134,7 +134,7 @@ namespace CDBAAPI.Controllers
 
                     result.Add(t);
                 }
-                return Ok(result);
+                return Ok(result.OrderByDescending(x=>x.Id));
 
             }catch(Exception ex)
             {
@@ -406,12 +406,12 @@ namespace CDBAAPI.Controllers
             }
         }
 
-        [HttpGet("BusinessReviewList/{id}")]
-        public IActionResult BusinessReviewList(int id)
+        [HttpGet("BusinessReviewList/{id}/{reviewType}")]
+        public IActionResult BusinessReviewList(int id, string reviewType)
         {
             try
             {
-                var oldBusinessReviewList = _devContext.TblTicketBusinessReviewLists.Where(x => x.TicketId == id && x.IsDeleted == false).FirstOrDefault();
+                var oldBusinessReviewList = _devContext.TblTicketReviewLists.Where(x => x.TicketId == id && x.IsDeleted == false && x.ReviewType == reviewType).FirstOrDefault();
                 if (oldBusinessReviewList != null)
                     return Ok(oldBusinessReviewList.Answers);
             }
@@ -422,8 +422,8 @@ namespace CDBAAPI.Controllers
             return Ok();
         }
 
-        [HttpPost("BusinessReviewList/{id}")]
-        public IActionResult BusinessReviewList(int id, [FromBody] Newtonsoft.Json.Linq.JObject answers)
+        [HttpPost("BusinessReviewList/{id}/{reviewType}")]
+        public IActionResult BusinessReviewList(int id, string reviewType, [FromBody] Newtonsoft.Json.Linq.JObject answers)
         {
             if (answers == null)
             {
@@ -438,7 +438,7 @@ namespace CDBAAPI.Controllers
 
             try
             {
-                var oldBusinessReviewList = _devContext.TblTicketBusinessReviewLists.Where(x => x.TicketId == id && x.IsDeleted == false).FirstOrDefault();
+                var oldBusinessReviewList = _devContext.TblTicketReviewLists.Where(x => x.TicketId == id && x.IsDeleted == false && x.ReviewType == reviewType).FirstOrDefault();
 
                 if(oldBusinessReviewList!=null)
                 {
@@ -451,17 +451,79 @@ namespace CDBAAPI.Controllers
 
             }
             
-            var businessReviewList = new TblTicketBusinessReviewList()
+            var businessReviewList = new TblTicketReviewList()
             {
                 TicketId = id,
                 Reviewer = user,
                 ReviewerId = employeeId,
                 CreatedDateTime = DateTime.Now,
                 Answers = answers.ToString(),
+                ReviewType = reviewType,
                 IsDeleted = false
             };
 
             _devContext.Add(businessReviewList);
+            _devContext.SaveChanges();
+            return Ok();
+        }
+
+        [HttpGet("CodeReviewList/{id}/{reviewType}")]
+        public IActionResult CodeReviewList(int id, string reviewType)
+        {
+            try
+            {
+                var oldCodeReviewList = _devContext.TblTicketReviewLists.Where(x => x.TicketId == id && x.IsDeleted == false && x.ReviewType == reviewType).FirstOrDefault();
+                if (oldCodeReviewList != null)
+                    return Ok(oldCodeReviewList.Answers);
+            }
+            finally
+            {
+
+            }
+            return Ok();
+        }
+
+        [HttpPost("CodeReviewList/{id}/{reviewType}")]
+        public IActionResult CodeReviewList(int id, string reviewType, [FromBody] Newtonsoft.Json.Linq.JObject answers)
+        {
+            if (answers == null)
+            {
+                return NotFound();
+            }
+
+            var claimsIdentity = User.Identity as ClaimsIdentity;
+
+            var employeeId = claimsIdentity.FindFirst("EmployeeId").Value;
+
+            var user = _devContext.TblTicketUsers.Where(x => x.EmployeeId == employeeId).FirstOrDefault().Name;
+
+            try
+            {
+                var oldCodeReviewList = _devContext.TblTicketReviewLists.Where(x => x.TicketId == id && x.IsDeleted == false && x.ReviewType == reviewType).FirstOrDefault();
+
+                if (oldCodeReviewList != null)
+                {
+                    oldCodeReviewList.IsDeleted = true;
+                    //_devContext.SaveChanges();
+                }
+            }
+            finally
+            {
+
+            }
+
+            var codeReviewList = new TblTicketReviewList()
+            {
+                TicketId = id,
+                Reviewer = user,
+                ReviewerId = employeeId,
+                ReviewType = reviewType,
+                CreatedDateTime = DateTime.Now,
+                Answers = answers.ToString(),
+                IsDeleted = false
+            };
+
+            _devContext.Add(codeReviewList);
             _devContext.SaveChanges();
             return Ok();
         }

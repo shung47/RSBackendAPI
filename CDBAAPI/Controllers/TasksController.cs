@@ -27,7 +27,7 @@ namespace CDBAAPI.Controllers
         public ActionResult<IEnumerable<TblTicketTask>> Get()
         {
             var result = _devContext.TblTicketTasks.Where(x=>x.IsDeleted==false);
-            return Ok(result);
+            return Ok(result.OrderByDescending(x=>x.Id));
         }
 
         // GET api/<TasksController>/5

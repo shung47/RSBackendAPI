@@ -18,12 +18,12 @@ namespace CDBAAPI.Models
         }
 
         public virtual DbSet<TblTicket> TblTickets { get; set; }
-        public virtual DbSet<TblTicketBusinessReviewList> TblTicketBusinessReviewLists { get; set; }
         public virtual DbSet<TblTicketComment> TblTicketComments { get; set; }
         public virtual DbSet<TblTicketDbcontrol> TblTicketDbcontrols { get; set; }
         public virtual DbSet<TblTicketLog> TblTicketLogs { get; set; }
         public virtual DbSet<TblTicketLoginInfo> TblTicketLoginInfos { get; set; }
         public virtual DbSet<TblTicketModifiedTable> TblTicketModifiedTables { get; set; }
+        public virtual DbSet<TblTicketReviewList> TblTicketReviewLists { get; set; }
         public virtual DbSet<TblTicketTask> TblTicketTasks { get; set; }
         public virtual DbSet<TblTicketUser> TblTicketUsers { get; set; }
 
@@ -103,27 +103,6 @@ namespace CDBAAPI.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.Type)
-                    .IsRequired()
-                    .HasMaxLength(25)
-                    .IsUnicode(false);
-            });
-
-            modelBuilder.Entity<TblTicketBusinessReviewList>(entity =>
-            {
-                entity.ToTable("tblTicket_BusinessReviewList");
-
-                entity.Property(e => e.Answers)
-                    .HasMaxLength(1000)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CreatedDateTime).HasColumnType("datetime");
-
-                entity.Property(e => e.Reviewer)
-                    .IsRequired()
-                    .HasMaxLength(25)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.ReviewerId)
                     .IsRequired()
                     .HasMaxLength(25)
                     .IsUnicode(false);
@@ -255,6 +234,31 @@ namespace CDBAAPI.Models
                 entity.Property(e => e.TableName)
                     .IsRequired()
                     .HasMaxLength(50)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<TblTicketReviewList>(entity =>
+            {
+                entity.ToTable("tblTicket_ReviewList");
+
+                entity.Property(e => e.Answers)
+                    .HasMaxLength(1000)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CreatedDateTime).HasColumnType("datetime");
+
+                entity.Property(e => e.ReviewType)
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Reviewer)
+                    .IsRequired()
+                    .HasMaxLength(25)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ReviewerId)
+                    .IsRequired()
+                    .HasMaxLength(25)
                     .IsUnicode(false);
             });
 
