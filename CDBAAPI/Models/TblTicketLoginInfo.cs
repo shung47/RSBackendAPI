@@ -11,5 +11,7 @@ namespace CDBAAPI.Models
         public string Name { get; set; }
         public string Team { get; set; }
         public string Inactive { get; set; }
+        public string LoginName { get; set; }
+        public string CanCreateTask { get; set; }
     }
 }

@@ -16,5 +16,6 @@ namespace CDBAAPI.Models
         public DateTime CreateDateTime { get; set; }
         public DateTime? LastModificationDateTime { get; set; }
         public bool IsDeleted { get; set; }
+        public string Summary { get; set; }
     }
 }

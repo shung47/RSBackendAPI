@@ -130,7 +130,8 @@ namespace CDBAAPI.Controllers
                         }
                     }
 
-                    t.TaskName = tasks.Where(x => x.Id == t.TaskId).FirstOrDefault().TaskName;
+                    if(t.TaskId!=null)
+                        t.TaskName = tasks.Where(x => x.Id == t.TaskId).FirstOrDefault().TaskName;
 
                     result.Add(t);
                 }
@@ -292,21 +293,34 @@ namespace CDBAAPI.Controllers
 
                 var ticketlogs = _devContext.TblTicketLogs.Where(x => x.TicketId == Id && x.IsDeleted == false && (x.Action == "Approved"||x.Action=="Completed"));
 
-                if (value.BusinessReview && !ticketlogs.Any(X => X.ApprovalType == "businessApproval"))
+                if(value.Type == "CYSpecialApproval")
+                {
+                    if(ticketlogs.Any(x => x.ApprovalType == "directorApproval"))
+                    {
+                        UpdateTicket(Id, value);
+                        return Ok();
+                    }else
+                    {
+                        return NotFound("Can't save the ticket. It requires a director approval");
+                    }
+                }
+
+                if (value.Type != "Incident" && value.BusinessReview && !ticketlogs.Any(X => X.ApprovalType == "businessApproval"))
                 {
                     return NotFound("Can't save the ticket. It requires a business approval");
                 }
-                if (value.IsRpa && !ticketlogs.Any(x => x.ApprovalType == "primaryCodeApproval"))
+
+                if (value.Type != "Incident" && !ticketlogs.Any(x => x.ApprovalType == "primaryCodeApproval"))
                 {
                     return NotFound("Can't save the ticket. It requires a code review approval");
                 }
 
-                if (value.SecondaryCodeReviewer != null && !ticketlogs.Any(x => x.ApprovalType == "secondaryCodeApproval"))
+                if (value.Type != "Incident" && value.SecondaryCodeReviewer != null && !ticketlogs.Any(x => x.ApprovalType == "secondaryCodeApproval"))
                 {
                     return NotFound("Can't save the ticket. It requires a secondary code review approval");
                 }
 
-                if(value.Dbmaster!="0"&& !ticketlogs.Any(x=>x.ApprovalType=="dbApproval"))
+                if(value.Dbmaster!=null && !ticketlogs.Any(x=>x.ApprovalType=="dbApproval"))
                 {
                     return NotFound("Can't save the ticket. It requires a SA master approval");
                 }
@@ -316,7 +330,7 @@ namespace CDBAAPI.Controllers
                     return NotFound("Can't save the ticket. It requires CY approval");
                 }
 
-                if (value.Type != "Incident" && !ticketlogs.Any(x => x.ApprovalType == "saLeaderApproval"))
+                if (!ticketlogs.Any(x => x.ApprovalType == "saLeaderApproval"))
                 {
                     return NotFound("Can't save the ticket. It requires a SA leader approval");
                 }
@@ -591,10 +605,33 @@ namespace CDBAAPI.Controllers
                 mailMessage.To.Add(new MailboxAddress("041086"+"@avnet.com"));
             }
 
-            if (ticket.Type == "Project" && mailMessage.To==null && !ticketlogs.Any(x => x.ApprovalType == "directorApproval" && x.Action == "Approved"))
+            if (ticket.Type == "Project" && mailMessage.To.Count()==0 && !ticketlogs.Any(x => x.ApprovalType == "directorApproval" && x.Action == "Approved"))
             {
                 //send to director email
-                //mailMessage.To.Add(new MailboxAddress("904218"+"@avnet.com"));
+                mailMessage.To.Add(new MailboxAddress("904218"+"@avnet.com"));
+            }
+
+            if(mailMessage.To.Count() == 0 && ticket.Dbmaster!=null&&!ticketlogs.Any(x=>x.ApprovalType=="dbApproval"&&x.Action=="Completed"))
+            {
+                mailMessage.To.Add(new MailboxAddress(ticket.Dbmaster.ToString() + "@avnet.com"));
+                mailMessage.Cc.Add(new MailboxAddress(user.EmployeeId + "@avnet.com"));
+                mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
+                mailMessage.Subject = "Ticket Approval Reminder";
+                mailMessage.Body = new TextPart("plain")
+                {
+                    Text = "Hello SA Master,\n\n" +
+                    "This is a reminder for you to take actions according to the ticket requirements:\n" +
+                     appUrl + "Tickets/Edit/" + id +
+                    "\n\nBest regards," +
+                    "\nCDBA Team"
+                };
+                using (var smtpClient = new SmtpClient())
+                {
+                    smtpClient.Connect("Smtprelay.avnet.com", 25, false);
+                    smtpClient.Send(mailMessage);
+                    smtpClient.Disconnect(true);
+                }
+                return Ok();
             }
 
             mailMessage.Cc.Add(new MailboxAddress(user.EmployeeId + "@avnet.com"));
@@ -605,7 +642,7 @@ namespace CDBAAPI.Controllers
                 Text = "Hello,\n\n" +
                 "This is a reminder for you to approve the following ticket:\n" +
                  appUrl + "Tickets/Edit/" + id +
-                "\n\n Best regards,"+
+                "\n\nBest regards,"+
                 "\nCDBA Team"
             };
 

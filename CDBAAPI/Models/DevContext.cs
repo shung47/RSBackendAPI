@@ -185,6 +185,10 @@ namespace CDBAAPI.Models
 
                 entity.ToTable("tblTicket_LoginInfo");
 
+                entity.Property(e => e.CanCreateTask)
+                    .HasMaxLength(1)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.Id)
                     .IsRequired()
                     .HasMaxLength(11)
@@ -193,6 +197,10 @@ namespace CDBAAPI.Models
 
                 entity.Property(e => e.Inactive)
                     .HasMaxLength(1)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.LoginName)
+                    .HasMaxLength(20)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Name)
@@ -230,6 +238,10 @@ namespace CDBAAPI.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.LastModificationDateTime).HasColumnType("datetime");
+
+                entity.Property(e => e.Summary)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.TableName)
                     .IsRequired()

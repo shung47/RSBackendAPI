@@ -36,29 +36,36 @@ namespace CDBAAPI.Controllers
         [HttpPost]
         public IActionResult POST(TblTicketUser value)
         {
+            var loginInfo = (from a in _devContext.TblTicketLoginInfos
+                            where a.LoginName == value.Name
+                            && a.Inactive !="Y"
+                            select a).SingleOrDefault();
 
             var user = (from a in _devContext.TblTicketUsers
-                        where a.EmployeeId == value.EmployeeId
+                        where a.EmployeeId == loginInfo.Id
                         && a.Password == EncryptString(value.Password)
                         select a).SingleOrDefault();
+
 
             if (user == null)
             {
                 return NotFound("Incorrect ID or password");
             }
 
-            //if (DecryptString(user.Password)!=value.Password)
-            //{
-            //    return NotFound("Incorrect Email or Password");
-            //}
-
-
 
             var claims = new List<Claim>
                 {
                     new Claim("EmployeeId", user.EmployeeId),
-                    new Claim("Name", user.Name)
+                    new Claim("Name", user.Name),                                    
                 };
+            if (loginInfo.CanCreateTask != null)
+            {
+                claims.Add(new Claim("CanCreateTask", loginInfo.CanCreateTask));
+            }
+            else
+            {
+                claims.Add(new Claim("CanCreateTask", "N"));
+            }
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:KEY"]));
 

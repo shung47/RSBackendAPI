@@ -56,7 +56,8 @@ namespace CDBAAPI.Controllers
                 CreatorId = employeeId,
                 LastModificationDateTime = DateTime.Now,
                 CreateDateTime = DateTime.Now,
-                IsDeleted = false
+                IsDeleted = false,
+                Summary = value.Summary
             };
 
             try
