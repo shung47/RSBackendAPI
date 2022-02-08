@@ -60,8 +60,7 @@ namespace CDBAAPI.Models
 
                 entity.Property(e => e.CreatorId)
                     .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasColumnName("creatorId");
+                    .IsUnicode(false);
 
                 entity.Property(e => e.Dbmaster)
                     .HasMaxLength(50)
