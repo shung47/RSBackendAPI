@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using MimeKit;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -14,6 +15,8 @@ using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 
 namespace CDBAAPI.Controllers
 {
@@ -25,6 +28,8 @@ namespace CDBAAPI.Controllers
         private readonly DevContext _devContext;
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _currentEnvironment;
+
+        public object Configuration { get; private set; }
 
         public LoginController(DevContext devContext, IConfiguration configuration, IWebHostEnvironment webHostEnvironment)
         {
@@ -112,6 +117,69 @@ namespace CDBAAPI.Controllers
         public IActionResult GET()
         {
             return Ok("The connection works. The environment is " + _currentEnvironment.EnvironmentName);
+        }
+
+        [HttpGet("SendEmail/{employeeId}")]
+        public IActionResult SendEmail(string employeeId)
+        {
+
+            var user = _devContext.TblTicketUsers.Where(x => x.EmployeeId == employeeId).FirstOrDefault();
+
+            if(user==null)
+            {
+                return NotFound("Cannot find the user");
+            }
+
+            var mailMessage = new MimeMessage();
+
+            var appUrl = _configuration["AppUrl"];
+
+            Byte[] bytesEncode = System.Text.Encoding.UTF8.GetBytes(employeeId);
+            var resetUrl = Convert.ToBase64String(bytesEncode);
+            mailMessage.To.Add(new MailboxAddress(employeeId + "@avnet.com"));
+            mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
+            mailMessage.Subject = "Reset Your Password";
+            mailMessage.Body = new TextPart("plain")
+            {
+                Text = "Hi,\n\n" +
+                "Please reset your password with the following link:\n" +
+                 appUrl + "ResetPassword/" + resetUrl +
+                "\n\nBest regards," +
+                "\nCDBA Team"
+            };
+
+            if (mailMessage.To.Count() != 0)
+            {
+                using (var smtpClient = new SmtpClient())
+                {
+                    smtpClient.Connect("Smtprelay.avnet.com", 25, false);
+                    smtpClient.Send(mailMessage);
+                    smtpClient.Disconnect(true);
+                }
+                return Ok();
+            }
+            else
+            {
+                return NotFound("There is no approver for this ticket");
+            }
+
+        }
+        
+        [HttpPut("ResetPassword")]
+        public IActionResult ResetPassword([FromBody] TblUser userInfo)
+        {
+            Byte[] bytesDecode = Convert.FromBase64String(userInfo.EmployeeId); 
+            string id = System.Text.Encoding.UTF8.GetString(bytesDecode); 
+
+            var user = _devContext.TblTicketUsers.Where(x => x.EmployeeId == id).FirstOrDefault();
+            if(user==null)
+            {
+                return NotFound("Cannot get the user data");
+            }
+            user.Password = EncryptString(userInfo.Password);
+            _devContext.SaveChanges();
+
+            return Ok();
         }
     }
 

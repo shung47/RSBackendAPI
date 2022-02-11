@@ -47,6 +47,15 @@ namespace CDBAAPI.Controllers
 
             var employee = claimsIdentity.FindFirst("Name").Value;
 
+            var tables = _devContext.TblTicketModifiedTables.Where(x => x.TicketId == value.TicketId && x.IsDeleted==false);
+
+            foreach(var table in tables)
+            {
+                if (table.DatabaseName != value.DatabaseName)
+                {
+                    return NotFound("Can't add the object in different database");
+                }
+            }
             TblTicketModifiedTable tblTicketModifiedTable = new TblTicketModifiedTable
             {
                 TicketId = value.TicketId,

@@ -87,12 +87,17 @@ namespace CDBAAPI.Controllers
         }
 
         // PUT api/<TasksController>/5
-        [HttpPut("{id}")]
-        public IActionResult Put(int id, [FromBody] TblTicketTask value)
+        [HttpPut("{id}/{timestamp}")]
+        public IActionResult Put(int id, DateTime timestamp, [FromBody] TblTicketTask value)
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
             var task = _devContext.TblTicketTasks.Where(x => x.Id == id).First();
+
+            if(task.LastModificationDateTime>timestamp)
+            {
+                return NotFound("Oops! Someone has updated the task. Please refresh the page");
+            }
 
             task.TaskName = value.TaskName;
             task.Region = value.Region;

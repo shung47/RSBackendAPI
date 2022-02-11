@@ -270,8 +270,8 @@ namespace CDBAAPI.Controllers
         }
 
         // PUT api/<TicketsController>/5
-        [HttpPut("{id}")]
-        public IActionResult Put(int Id, [FromBody] TblTicket value)
+        [HttpPut("{id}/{timeStamp}")]
+        public IActionResult Put(int Id, DateTime timeStamp, [FromBody] TblTicket value)
         {
             var claimsIdentity = User.Identity as ClaimsIdentity;
 
@@ -279,31 +279,35 @@ namespace CDBAAPI.Controllers
 
             var ticket = _devContext.TblTickets.Where(x => x.Id == Id).FirstOrDefault();
 
+            if(ticket.LastModificationDateTime> timeStamp)
+            {
+                return NotFound("Oops. Someone has updated the ticket. Please refresh the page");
+            }
             if (value.Status == "Reviewing")
             {
                 if(value.Type!="Incident"&& string.IsNullOrEmpty(value.PrimaryCodeReviewer))
                 {
-                    AutoSendEmail("AssignCodeReviewer", "SALeader", ticket.CreatorId, ticket.Assignee, ticket.Id);
+                    AutoSendEmail("AssignCodeReviewer", "SALeader", ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
                 }
 
                 if(value.Type=="Incident" && ticket.Status=="UnderDevelopment")
                 {
-                    AutoSendEmail("SALeaderReminder", "SALeader", ticket.CreatorId, ticket.Assignee, ticket.Id);
+                    AutoSendEmail("SALeaderReminder", "SALeader", ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
                 }
 
                 if (ticket.BusinessReviewer != value.BusinessReviewer && !string.IsNullOrEmpty(value.BusinessReviewer))
                 {
-                    AutoSendEmail("AppointBusinessReviewer", value.BusinessReviewer, ticket.CreatorId, ticket.Assignee, ticket.Id);
+                    AutoSendEmail("AppointBusinessReviewer", value.BusinessReviewer, ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
                 }
 
                 if (ticket.PrimaryCodeReviewer != value.PrimaryCodeReviewer && !string.IsNullOrEmpty(value.PrimaryCodeReviewer))
                 {
-                    AutoSendEmail("AppointPrimaryCodeReviewer", value.PrimaryCodeReviewer, ticket.CreatorId, ticket.Assignee, ticket.Id);
+                    AutoSendEmail("AppointPrimaryCodeReviewer", value.PrimaryCodeReviewer, ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
                 }
 
                 if (ticket.SecondaryCodeReviewer != value.SecondaryCodeReviewer && !string.IsNullOrEmpty(value.SecondaryCodeReviewer))
                 {
-                    AutoSendEmail("AppointSecondaryCodeReviewer", value.SecondaryCodeReviewer, ticket.CreatorId, ticket.Assignee, ticket.Id);
+                    AutoSendEmail("AppointSecondaryCodeReviewer", value.SecondaryCodeReviewer, ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
                 }
 
             }
@@ -387,11 +391,13 @@ namespace CDBAAPI.Controllers
                 }
             }
 
-            void AutoSendEmail(string emailType, string receiver, string assignee, string creator, int id)
+            void AutoSendEmail(string emailType, string receiver, string assignee, string creator, int id, string ticketName)
             {
                 var mailMessage = new MimeMessage();
 
                 var appUrl = Configuration["AppUrl"];
+
+                var userName = _devContext.TblTicketUsers.Where(x => x.EmployeeId == receiver).FirstOrDefault().Name;
 
                 switch (emailType)
                 {
@@ -401,10 +407,10 @@ namespace CDBAAPI.Controllers
                         mailMessage.Cc.Add(new MailboxAddress(creator + "@avnet.com"));
                         mailMessage.Cc.Add(new MailboxAddress(assignee + "@avnet.com"));
                         mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
-                        mailMessage.Subject = "Business Reviewer";
+                        mailMessage.Subject = "To Assign Code Reviewer:#<"+ id +"><"+ticketName+">";
                         mailMessage.Body = new TextPart("plain")
                         {
-                            Text = "Hello Kam and Wenze,\n\n" +
+                            Text = "Hi Kam and Wenze,\n\n" +
                             "The following ticket is ready to be reviewed. Please assign reviewers to do the code review.\n" +
                              appUrl + "Tickets/Edit/" + id +
                             "\n\nBest regards," +
@@ -422,10 +428,10 @@ namespace CDBAAPI.Controllers
                         mailMessage.Cc.Add(new MailboxAddress(assignee + "@avnet.com"));
                         mailMessage.Cc.Add(new MailboxAddress(creator + "@avnet.com"));
                         mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
-                        mailMessage.Subject = "Business Reviewer";
+                        mailMessage.Subject = "You've been assigned as Business Reviewer: #<" + id + "><" + ticketName + ">";
                         mailMessage.Body = new TextPart("plain")
                         {
-                            Text = "Hello,\n\n" +
+                            Text = "Hi "+userName+",\n\n" +
                             "You have been appointed as the business reviewer for the ticket:\n" +
                              appUrl + "Tickets/Edit/" + id +
                             "\n\nBest regards," +
@@ -445,10 +451,10 @@ namespace CDBAAPI.Controllers
                         mailMessage.Cc.Add(new MailboxAddress("043138" + "@avnet.com"));
                         mailMessage.Cc.Add(new MailboxAddress("041086" + "@avnet.com"));
                         mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
-                        mailMessage.Subject = "Primary Code Reviewer";
+                        mailMessage.Subject = "You've been assigned as Primary Code Reviewer:#<" + id + "><" + ticketName + ">";
                         mailMessage.Body = new TextPart("plain")
                         {
-                            Text = "Hello,\n\n" +
+                            Text = "Hi " + userName + ",\n\n" +
                             "You have been appointed as the primary code reviewer for the ticket:\n" +
                              appUrl + "Tickets/Edit/" + id +
                             "\n\nBest regards," +
@@ -468,10 +474,10 @@ namespace CDBAAPI.Controllers
                         mailMessage.Cc.Add(new MailboxAddress("043138" + "@avnet.com"));
                         mailMessage.Cc.Add(new MailboxAddress("041086" + "@avnet.com"));
                         mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
-                        mailMessage.Subject = "Secondary Code Reviewer";
+                        mailMessage.Subject = "You've been assigned as Secondary Code Reviewer:#<" + id + "><" + ticketName + ">";
                         mailMessage.Body = new TextPart("plain")
                         {
-                            Text = "Hello,\n\n" +
+                            Text = "Hi " + userName + ",\n\n" +
                             "You have been appointed as the secondary code reviewer for the ticket:\n" +
                              appUrl + "Tickets/Edit/" + id +
                             "\n\nBest regards," +
@@ -490,10 +496,10 @@ namespace CDBAAPI.Controllers
                         mailMessage.Cc.Add(new MailboxAddress(assignee + "@avnet.com"));
                         mailMessage.Cc.Add(new MailboxAddress(creator + "@avnet.com"));
                         mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
-                        mailMessage.Subject = "SA Leader Approval Reminder";
+                        mailMessage.Subject = "To Approve:#<" + id + "><" + ticketName + ">";
                         mailMessage.Body = new TextPart("plain")
                         {
-                            Text = "Hi kam and Wenze,\n\n" +
+                            Text = "Hi Kam and Wenze,\n\n" +
                             "The following ticket is required your approval:\n" +
                              appUrl + "Tickets/Edit/" + id +
                             "\n\nBest regards," +
@@ -563,90 +569,94 @@ namespace CDBAAPI.Controllers
                 }
                 _devContext.Add(ticketlog);
                 _devContext.SaveChanges();
+                var allRecords = _devContext.TblTicketLogs.Where(x => x.TicketId == Id && x.IsDeleted == false);
 
-                if (ticketlog.ApprovalType == "businessApproval")
+                if (ticketlog.ApprovalType == "businessApproval" && ticketlog.Action == "Approved")
                 {
-                    AutoSendEmail("BusinessApproved", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id);
+                    AutoSendEmail("BusinessApproved", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
+
 
                     if (string.IsNullOrEmpty(ticket.SecondaryCodeReviewer))
                     {
-                        if (records.Any(x => x.ApprovalType == "primaryCodeApproval"))
+                        if (allRecords.Any(x => x.ApprovalType == "primaryCodeApproval"))
                         {
-                            AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id);
+                            AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                         }
                     }
                     else
                     {
-                        if (records.Any(x => x.ApprovalType == "primaryCodeApproval") && records.Any(x => x.ApprovalType == "primaryCodeApproval"))
+                        if (allRecords.Any(x => x.ApprovalType == "primaryCodeApproval") && allRecords.Any(x => x.ApprovalType == "secondaryCodeApproval"))
                         {
-                            AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id);
+                            AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                         }
                     }
                 }
-                else if (ticketlog.ApprovalType == "primaryCodeApproval")
+                else if (ticketlog.ApprovalType == "primaryCodeApproval" && ticketlog.Action=="Approved")
                 {
-                    AutoSendEmail("CodeApproved", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id);
+                    AutoSendEmail("CodeApproved", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
 
                     if (string.IsNullOrEmpty(ticket.SecondaryCodeReviewer))
                     {
-                        if (records.Any(x => x.ApprovalType == "businessApproval"))
+                        if (allRecords.Any(x => x.ApprovalType == "businessApproval"))
                         {
-                            AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id);
+                            AutoSendEmail("SALeaderReminder", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                         }
                     }
                     else
                     {
-                        if (records.Any(x => x.ApprovalType == "businessApproval") && records.Any(x => x.ApprovalType == "primaryCodeApproval"))
+                        if (allRecords.Any(x => x.ApprovalType == "businessApproval") && allRecords.Any(x => x.ApprovalType == "primaryCodeApproval"))
                         {
-                            AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id);
+                            AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                         }
                     }
                 }
-                else if (ticketlog.ApprovalType == "secondaryCodeApproval")
+                else if (ticketlog.ApprovalType == "secondaryCodeApproval" && ticketlog.Action == "Approved")
                 {
-                    AutoSendEmail("CodeApproved", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id);
+                    AutoSendEmail("CodeApproved", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
 
-                    if (records.Any(x => x.ApprovalType == "businessApproval") && records.Any(x => x.ApprovalType == "primaryCodeApproval"))
+                    if (allRecords.Any(x => x.ApprovalType == "businessApproval") && allRecords.Any(x => x.ApprovalType == "primaryCodeApproval"))
                     {
-                        AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id);
+                        AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                     }
                 }
-                else if (ticketlog.ApprovalType == "saLeaderApproval")
+                else if (ticketlog.ApprovalType == "saLeaderApproval" && ticketlog.Action == "Approved")
                 {
-                    AutoSendEmail("SALeaderApproved", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id);
+                    AutoSendEmail("SALeaderApproved", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
 
                     if (ticket.Type == "Project")
                     {
-                        AutoSendEmail("DirectorReminder", "Director", ticket.Assignee, ticket.CreatorId, ticket.Id);
+                        AutoSendEmail("DirectorReminder", "Director", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                     }
                     else
                     {   
                         if(!string.IsNullOrEmpty(ticket.Dbmaster))
-                            AutoSendEmail("SAMasterReminder", ticket.Dbmaster, ticket.Assignee, ticket.CreatorId, ticket.Id);
+                            AutoSendEmail("SAMasterReminder", ticket.Dbmaster, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                     }
                 }
-                else if (ticketlog.ApprovalType == "directorApproval")
+                else if (ticketlog.ApprovalType == "directorApproval" && ticketlog.Action == "Approved")
                 {
-                    AutoSendEmail("DirectorApproved", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id);
+                    AutoSendEmail("DirectorApproved", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                     if (!string.IsNullOrEmpty(ticket.Dbmaster))
-                        AutoSendEmail("SAMasterReminder", ticket.Dbmaster, ticket.Assignee, ticket.CreatorId, ticket.Id);
+                        AutoSendEmail("SAMasterReminder", ticket.Dbmaster, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                 }
-                else if (ticketlog.ApprovalType == "dbApproval")
+                else if (ticketlog.ApprovalType == "dbApproval" && ticketlog.Action == "Completed")
                 {
-                    AutoSendEmail("SAMasterCompleted", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id);
+                    AutoSendEmail("SAMasterCompleted", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                 }
                 else
                 {
-                    return NotFound("Wrong Approval Type");
+                    return Ok("No Email is sent");
                 }
 
                 return Ok(ticketlog);
 
-                 void AutoSendEmail(string emailType, string receiver, string assignee, string creator, int id)
+                 void AutoSendEmail(string emailType, string receiver, string assignee, string creator, int id, string ticketName)
                 {
                     var mailMessage = new MimeMessage();
 
                     var appUrl = Configuration["AppUrl"];
+
+                    var userName = _devContext.TblTicketUsers.Where(x => x.EmployeeId == receiver).FirstOrDefault().Name;
 
                     switch (emailType)
                     {
@@ -654,10 +664,10 @@ namespace CDBAAPI.Controllers
                             mailMessage.To.Add(new MailboxAddress(receiver + "@avnet.com"));
                             mailMessage.Cc.Add(new MailboxAddress(creator + "@avnet.com"));
                             mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
-                            mailMessage.Subject = "Business Review Approved";
+                            mailMessage.Subject = "Business Review Approved:#<" + id + "><" + ticketName + ">";
                             mailMessage.Body = new TextPart("plain")
                             {
-                                Text = "Hello,\n\n" +
+                                Text = "Hi " + userName + ",\n\n" +
                                 "The business review is approved for the ticket:\n" +
                                  appUrl + "Tickets/Edit/" + id +
                                 "\n\nBest regards," +
@@ -671,15 +681,13 @@ namespace CDBAAPI.Controllers
                             }
                             break;
                         case "CodeApproved":
-                            mailMessage.To.Add(new MailboxAddress("043138" + "@avnet.com"));
-                            mailMessage.To.Add(new MailboxAddress("041086" + "@avnet.com"));
                             mailMessage.To.Add(new MailboxAddress(assignee + "@avnet.com"));
                             mailMessage.Cc.Add(new MailboxAddress(creator + "@avnet.com"));
                             mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
-                            mailMessage.Subject = "Code Review Approved";
+                            mailMessage.Subject = "Code Review Approved:#<" + id + "><" + ticketName + ">";
                             mailMessage.Body = new TextPart("plain")
                             {
-                                Text = "Hello,\n\n" +
+                                Text = "Hi " + userName + ",\n\n" +
                                 "The code review is approved for the ticket:\n" +
                                  appUrl + "Tickets/Edit/" + id +
                                 "\n\nBest regards," +
@@ -698,10 +706,10 @@ namespace CDBAAPI.Controllers
                             mailMessage.Cc.Add(new MailboxAddress(assignee + "@avnet.com"));
                             mailMessage.Cc.Add(new MailboxAddress(creator + "@avnet.com"));
                             mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
-                            mailMessage.Subject = "SA Leader Approval Reminder";
+                            mailMessage.Subject = "To Approve:#<" + id + "><" + ticketName + ">";
                             mailMessage.Body = new TextPart("plain")
                             {
-                                Text = "Hi kam and Wenze,\n\n" +
+                                Text = "Hi Kam and Wenze,\n\n" +
                                 "The following ticket is required your approval:\n" +
                                  appUrl + "Tickets/Edit/" + id +
                                 "\n\nBest regards," +
@@ -718,10 +726,10 @@ namespace CDBAAPI.Controllers
                             mailMessage.To.Add(new MailboxAddress(receiver + "@avnet.com"));
                             mailMessage.Cc.Add(new MailboxAddress(creator + "@avnet.com"));
                             mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
-                            mailMessage.Subject = "SA Leader Approved";
+                            mailMessage.Subject = "SA Leader Approved:#<" + id + "><" + ticketName + ">";
                             mailMessage.Body = new TextPart("plain")
                             {
-                                Text = "Hello,\n\n" +
+                                Text = "Hi " + userName + ",\n\n" +
                                 "SA leader is approved the ticket:\n" +
                                  appUrl + "Tickets/Edit/" + id +
                                 "\n\nBest regards," +
@@ -739,10 +747,10 @@ namespace CDBAAPI.Controllers
                             mailMessage.Cc.Add(new MailboxAddress(creator + "@avnet.com"));
                             mailMessage.Cc.Add(new MailboxAddress(assignee + "@avnet.com"));
                             mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
-                            mailMessage.Subject = "Director Approval Reminder";
+                            mailMessage.Subject = "To Approve:#<" + id + "><" + ticketName + ">";
                             mailMessage.Body = new TextPart("plain")
                             {
-                                Text = "Hello CY,\n\n" +
+                                Text = "Hi CY,\n\n" +
                                 "This is the reminder to approve the following ticket:\n" +
                                  appUrl + "Tickets/Edit/" + id +
                                 "\n\nBest regards," +
@@ -760,10 +768,10 @@ namespace CDBAAPI.Controllers
                             mailMessage.Cc.Add(new MailboxAddress(creator + "@avnet.com"));
                             mailMessage.Cc.Add(new MailboxAddress("904218" + "@avnet.com"));
                             mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
-                            mailMessage.Subject = "Director Approved";
+                            mailMessage.Subject = "Director Approved:#<" + id + "><" + ticketName + ">";
                             mailMessage.Body = new TextPart("plain")
                             {
-                                Text = "Hello,\n\n" +
+                                Text = "Hi " + userName + ",\n\n" +
                                 "The director has approved the following ticket:\n" +
                                  appUrl + "Tickets/Edit/" + id +
                                 "\n\nBest regards," +
@@ -781,11 +789,11 @@ namespace CDBAAPI.Controllers
                             mailMessage.Cc.Add(new MailboxAddress(creator + "@avnet.com"));
                             mailMessage.Cc.Add(new MailboxAddress(assignee + "@avnet.com"));
                             mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
-                            mailMessage.Subject = "SA Master Reminder";
+                            mailMessage.Subject = "Reminder:#<" + id + "><" + ticketName + ">";
                             mailMessage.Body = new TextPart("plain")
                             {
-                                Text = "Hello SA Master,\n\n" +
-                                "The ticket has been approved. Please take actions for the following ticket:\n" +
+                                Text = "Hi SA Master,\n\n" +
+                                "This is a reminder for you to take actions according to the ticket requirements:\n" +
                                  appUrl + "Tickets/Edit/" + id +
                                 "\n\nBest regards," +
                                 "\nCDBA Team"
@@ -801,10 +809,10 @@ namespace CDBAAPI.Controllers
                             mailMessage.To.Add(new MailboxAddress(receiver + "@avnet.com"));
                             mailMessage.Cc.Add(new MailboxAddress(creator + "@avnet.com"));
                             mailMessage.From.Add(new MailboxAddress("CDBA-AUTOMATION", "CDBA-AUTO@AVNET.COM"));
-                            mailMessage.Subject = "DB Changes Completed";
+                            mailMessage.Subject = "Database changes completed:#<" + id + "><" + ticketName + ">";
                             mailMessage.Body = new TextPart("plain")
                             {
-                                Text = "Hello,\n\n" +
+                                Text = "Hi " + userName + ",\n\n" +
                                 "The database changes has completed:\n" +
                                  appUrl + "Tickets/Edit/" + id +
                                 "\n\nBest regards," +
