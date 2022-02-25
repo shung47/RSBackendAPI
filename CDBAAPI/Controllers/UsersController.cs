@@ -39,6 +39,23 @@ namespace CDBAAPI.Controllers
             return Ok(result.OrderBy(x=>x.Name));
         }
 
+        [HttpGet("SA")]
+        public ActionResult<IEnumerable<TblUser>>GetSA()
+        {
+            var loginInfo = _devContext.TblTicketLoginInfos.Where(x => x.Samaster == "Y");
+            List<TblUser> result = new List<TblUser>();
+            foreach(var user in loginInfo)
+            {
+                TblUser u = new TblUser()
+                {
+                    Name = user.Name,
+                    EmployeeId = user.Id
+                };
+                result.Add(u);
+            }
+            return result;
+        }
+
         // GET api/<UsersController>/5
         //[HttpGet("{id}")]
         //public ActionResult<User> Get(int id)

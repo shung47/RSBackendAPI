@@ -13,5 +13,6 @@ namespace CDBAAPI.Models
         public string Inactive { get; set; }
         public string LoginName { get; set; }
         public string CanCreateTask { get; set; }
+        public string Samaster { get; set; }
     }
 }

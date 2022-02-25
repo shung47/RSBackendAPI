@@ -49,6 +49,15 @@ namespace CDBAAPI.Controllers
 
             var tables = _devContext.TblTicketModifiedTables.Where(x => x.TicketId == value.TicketId && x.IsDeleted==false);
 
+            var ticket = _devContext.TblTickets.Where(x => x.Id == value.TicketId).FirstOrDefault();
+
+            if(ticket!=null)
+            {
+                if(ticket.Status=="Completed")
+                {
+                    return NotFound("Can't add the object for a completed ticket");
+                }
+            }
             foreach(var table in tables)
             {
                 if (table.DatabaseName != value.DatabaseName)
@@ -89,11 +98,23 @@ namespace CDBAAPI.Controllers
 
         // DELETE api/<TicketModifiedTablesController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public IActionResult Delete(int id)
         {
             var table = _devContext.TblTicketModifiedTables.Where(x => x.Id == id).FirstOrDefault();
+
+            var ticket = _devContext.TblTickets.Where(x => x.Id == table.TicketId).FirstOrDefault();
+            
+            if(ticket!=null)
+            {
+                if(ticket.Status=="Completed")
+                {
+                    return NotFound("Can't delete the object for a completed ticket");
+                }
+            }
             table.IsDeleted = true;
             _devContext.SaveChanges();
+
+            return Ok();
         }
     }
 }

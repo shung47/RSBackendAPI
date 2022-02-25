@@ -27,7 +27,7 @@ namespace CDBAAPI.Controllers
         public ActionResult<IEnumerable<TblTicketTask>> Get()
         {
             var result = _devContext.TblTicketTasks.Where(x=>x.IsDeleted==false);
-            return Ok(result.OrderByDescending(x=>x.Id));
+            return Ok(result.OrderBy(x=>x.TaskName));
         }
 
         // GET api/<TasksController>/5
@@ -56,6 +56,11 @@ namespace CDBAAPI.Controllers
             var employeeId = claimsIdentity.FindFirst("EmployeeId").Value;
 
             var employee = claimsIdentity.FindFirst("Name").Value;
+
+            if (_devContext.TblTicketTasks.Any(x => x.TaskName == value.TaskName))
+            {
+                return NotFound("This task name is already exist");
+            }
 
             TblTicketTask task = new TblTicketTask
             {
@@ -97,6 +102,11 @@ namespace CDBAAPI.Controllers
             if(task.LastModificationDateTime>timestamp)
             {
                 return NotFound("Oops! Someone has updated the task. Please refresh the page");
+            }
+
+            if (_devContext.TblTicketTasks.Any(x => x.TaskName == value.TaskName && x.Id != value.Id))
+            {
+                return NotFound("This task name is already exist");
             }
 
             task.TaskName = value.TaskName;

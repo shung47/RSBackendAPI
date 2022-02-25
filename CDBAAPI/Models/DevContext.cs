@@ -207,6 +207,11 @@ namespace CDBAAPI.Models
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
+                entity.Property(e => e.Samaster)
+                    .HasMaxLength(1)
+                    .IsUnicode(false)
+                    .HasColumnName("SAMaster");
+
                 entity.Property(e => e.Team)
                     .IsRequired()
                     .HasMaxLength(50)
