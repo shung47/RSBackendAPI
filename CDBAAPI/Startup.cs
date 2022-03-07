@@ -54,6 +54,7 @@ namespace CDBAAPI
                 services.AddDbContext<DevContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("ProductionDatabase")));
             }
+
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                .AddJwtBearer(options =>
                {
@@ -67,6 +68,7 @@ namespace CDBAAPI
                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JWT:KEY"]))
                    };
                });
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -88,7 +90,16 @@ namespace CDBAAPI
             //    .AllowCredentials());
             app.UseAuthentication();
             app.UseAuthorization();
-            
+            app.UseHttpsRedirection();
+            //app.UseStatusCodePages(async context => {
+            //    var request = context.HttpContext.Request;
+            //    var response = context.HttpContext.Response;
+
+            //    if (response.StatusCode == 304)
+            //    {
+            //        response.Redirect("/login");
+            //       };
+            //});
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
