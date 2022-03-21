@@ -32,6 +32,7 @@ namespace CDBAAPI.Controllers
         private readonly IMapper _mapper;
         private readonly IConfiguration Configuration;
         private readonly string _folder;
+        public IWebHostEnvironment CurrentEnvironment { get; set; }
 
         private readonly static Dictionary<string, string> _contentTypes = new Dictionary<string, string>
         {
@@ -53,12 +54,13 @@ namespace CDBAAPI.Controllers
                 {".zip", "application/zip" }
         };
 
-        public TicketsController(DevContext devContext, IMapper mapper, IConfiguration configuration, IHostingEnvironment env)
+        public TicketsController(DevContext devContext, IMapper mapper, IConfiguration configuration, IWebHostEnvironment env)
         {
             _devContext = devContext;
             _mapper = mapper;
-            Configuration = configuration;
-            _folder = $@"{env.WebRootPath}\RequestSystemFiles";
+            Configuration = configuration;           
+            CurrentEnvironment = env;
+            _folder = $@"{CurrentEnvironment.WebRootPath}\CDBALOG_UploadFiles\" + CurrentEnvironment.EnvironmentName;
         }
         
         // GET: api/<TicketsController> Get all tickets
@@ -300,16 +302,19 @@ namespace CDBAAPI.Controllers
                 if(!(value.Type=="Incident"||value.Type== "CYSpecialApproval") && string.IsNullOrEmpty(value.PrimaryCodeReviewer) && (ticket.Status == "UnderDevelopment"||ticket.Status == "OnHold"))
                 {
                     AutoSendEmail("AssignCodeReviewer", "SALeader", ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
+                    ticket.SaleaderRequired = true;
                 }
 
                 if(value.Type=="Incident" && (ticket.Status=="UnderDevelopment"||ticket.Status=="OnHold"))
                 {
                     AutoSendEmail("SALeaderReminder", "SALeader", ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
+                    ticket.SaleaderRequired = true;
                 }
 
-                if (ticket.Type == "CYSpecialApproval" && ticket.Status == "UnderDevelopment")
+                if (ticket.Type == "CYSpecialApproval" && (ticket.Status == "UnderDevelopment"|| ticket.Status =="OnHold"))
                 {
                     AutoSendEmail("DirectorApproval", "Director", ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
+                    ticket.DirectorRequired = true;
                 }
 
                 if (ticket.BusinessReviewer != value.BusinessReviewer && !string.IsNullOrEmpty(value.BusinessReviewer))
@@ -320,11 +325,13 @@ namespace CDBAAPI.Controllers
                 if (ticket.PrimaryCodeReviewer != value.PrimaryCodeReviewer && !string.IsNullOrEmpty(value.PrimaryCodeReviewer))
                 {
                     AutoSendEmail("AppointPrimaryCodeReviewer", value.PrimaryCodeReviewer, ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
+                    ticket.SaleaderRequired = false;
                 }
 
                 if (ticket.SecondaryCodeReviewer != value.SecondaryCodeReviewer && !string.IsNullOrEmpty(value.SecondaryCodeReviewer))
                 {
                     AutoSendEmail("AppointSecondaryCodeReviewer", value.SecondaryCodeReviewer, ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
+                    ticket.SaleaderRequired = false;
                 }
                 
 
@@ -412,8 +419,20 @@ namespace CDBAAPI.Controllers
             void AutoSendEmail(string emailType, string receiver, string assignee, string creator, int id, string ticketName)
             {
                 var mailMessage = new MimeMessage();
-
-                var appUrl = Configuration["AppUrl"];
+                var appUrl = "";
+                if (CurrentEnvironment.EnvironmentName=="UAT")
+                {
+                     appUrl = Configuration["AppUrl:UAT"];
+                }
+                else if(CurrentEnvironment.EnvironmentName=="Production")
+                {
+                     appUrl = Configuration["AppUrl:Production"];
+                }
+                else
+                {
+                     appUrl = Configuration["AppUrl:Development"];
+                }
+                
                 var userName ="";
                 if(receiver=="SALeader")
                 {
@@ -643,6 +662,7 @@ namespace CDBAAPI.Controllers
                         if (allRecords.Any(x => x.ApprovalType == "primaryCodeApproval" && x.Action == "Approved"))
                         {
                             AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
+                            ticket.SaleaderRequired = true;
                         }
                     }
                     else
@@ -650,6 +670,7 @@ namespace CDBAAPI.Controllers
                         if (allRecords.Any(x => x.ApprovalType == "primaryCodeApproval" && x.Action == "Approved") && allRecords.Any(x => x.ApprovalType == "secondaryCodeApproval"&& x.Action == "Approved"))
                         {
                             AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
+                            ticket.SaleaderRequired = true;
                         }
                     }
                 }
@@ -666,6 +687,7 @@ namespace CDBAAPI.Controllers
                         if (allRecords.Any(x => x.ApprovalType == "businessApproval" && x.Action == "Approved"))
                         {
                             AutoSendEmail("SALeaderReminder", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
+                            ticket.SaleaderRequired = true;
                         }
                     }
                     else
@@ -673,6 +695,7 @@ namespace CDBAAPI.Controllers
                         if (allRecords.Any(x => x.ApprovalType == "businessApproval"&&x.Action=="Approved") && allRecords.Any(x => x.ApprovalType == "secondaryCodeApproval"&&x.Action=="Approved"))
                         {
                             AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
+                            ticket.SaleaderRequired = true;
                         }
                     }
                 }
@@ -688,15 +711,18 @@ namespace CDBAAPI.Controllers
                     if (allRecords.Any(x => x.ApprovalType == "businessApproval" && x.Action == "Approved") && allRecords.Any(x => x.ApprovalType == "primaryCodeApproval" && x.Action == "Approved"))
                     {
                         AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
+                        ticket.SaleaderRequired = true;
                     }
                 }
                 else if (ticketlog.ApprovalType == "saLeaderApproval" && ticketlog.Action == "Approved")
                 {
                     AutoSendEmail("SALeaderApproved", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
+                    ticket.SaleaderRequired = false;
 
                     if (ticket.Type == "Project")
                     {
                         AutoSendEmail("DirectorReminder", "Director", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
+                        ticket.DirectorRequired = true;
                     }
                     else
                     {   
@@ -707,6 +733,7 @@ namespace CDBAAPI.Controllers
                 else if (ticketlog.ApprovalType == "directorApproval" && ticketlog.Action == "Approved")
                 {
                     AutoSendEmail("DirectorApproved", ticket.Assignee, "Director", ticket.CreatorId, ticket.Id, ticket.Title);
+                    ticket.DirectorRequired = false;
                     if (!string.IsNullOrEmpty(ticket.Dbmaster))
                         AutoSendEmail("SAMasterReminder", ticket.Dbmaster, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                 }
@@ -718,15 +745,27 @@ namespace CDBAAPI.Controllers
                 {
                     return Ok("No Email is sent");
                 }
-
+                _devContext.SaveChanges();
                 return Ok(ticketlog);
 
                  void AutoSendEmail(string emailType, string receiver, string assignee, string creator, int id, string ticketName)
                 {
                     var mailMessage = new MimeMessage();
 
-                    var appUrl = Configuration["AppUrl"];
-                  
+                    var appUrl = "";
+                    if (CurrentEnvironment.EnvironmentName == "UAT")
+                    {
+                        appUrl = Configuration["AppUrl:UAT"];
+                    }
+                    else if (CurrentEnvironment.EnvironmentName == "Production")
+                    {
+                        appUrl = Configuration["AppUrl:Production"];
+                    }
+                    else
+                    {
+                        appUrl = Configuration["AppUrl:Development"];
+                    }
+
                     var userName = "";
 
                     if(receiver =="SALeader")
@@ -1068,7 +1107,19 @@ namespace CDBAAPI.Controllers
 
             var mailMessage = new MimeMessage();
 
-            var appUrl = Configuration["AppUrl"];
+            var appUrl = "";
+            if (CurrentEnvironment.EnvironmentName == "UAT")
+            {
+                appUrl = Configuration["AppUrl:UAT"];
+            }
+            else if (CurrentEnvironment.EnvironmentName == "Production")
+            {
+                appUrl = Configuration["AppUrl:Production"];
+            }
+            else
+            {
+                appUrl = Configuration["AppUrl:Development"];
+            }
 
             if (String.IsNullOrEmpty(ticket.PrimaryCodeReviewer) && ticket.Type != "Incident")
             {

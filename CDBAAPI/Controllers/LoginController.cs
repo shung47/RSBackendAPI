@@ -132,7 +132,19 @@ namespace CDBAAPI.Controllers
 
             var mailMessage = new MimeMessage();
 
-            var appUrl = _configuration["AppUrl"];
+            var appUrl = "";
+            if (_currentEnvironment.EnvironmentName == "UAT")
+            {
+                appUrl = _configuration["AppUrl:UAT"];
+            }
+            else if (_currentEnvironment.EnvironmentName == "Production")
+            {
+                appUrl = _configuration["AppUrl:Production"];
+            }
+            else
+            {
+                appUrl = _configuration["AppUrl:Development"];
+            }
 
             Byte[] bytesEncode = System.Text.Encoding.UTF8.GetBytes(employeeId);
             var resetUrl = Convert.ToBase64String(bytesEncode);

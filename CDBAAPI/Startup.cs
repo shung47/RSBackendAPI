@@ -44,12 +44,18 @@ namespace CDBAAPI
             });
             services.AddControllers();
             services.AddAutoMapper(typeof(Startup));
-            
-            if(CurrentEnvironment.IsDevelopment())
+
+            if (CurrentEnvironment.IsDevelopment())
             {
                 services.AddDbContext<DevContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DevDatabase")));
-            }else
+            }
+            else if (CurrentEnvironment.EnvironmentName == "UAT")
+            {
+                services.AddDbContext<DevContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("UATDatabase")));
+            }
+            else
             {
                 services.AddDbContext<DevContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("ProductionDatabase")));
@@ -83,23 +89,10 @@ namespace CDBAAPI
             //Order is matter
             app.UseRouting();
             app.UseCors();
-            //app.UseCors(x => x
-            //    .AllowAnyMethod()
-            //    .AllowAnyHeader()
-            //    .SetIsOriginAllowed(origin => true) // allow any origin
-            //    .AllowCredentials());
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseHttpsRedirection();
-            //app.UseStatusCodePages(async context => {
-            //    var request = context.HttpContext.Request;
-            //    var response = context.HttpContext.Response;
 
-            //    if (response.StatusCode == 304)
-            //    {
-            //        response.Redirect("/login");
-            //       };
-            //});
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

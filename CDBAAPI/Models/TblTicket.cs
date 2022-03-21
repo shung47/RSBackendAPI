@@ -27,5 +27,7 @@ namespace CDBAAPI.Models
         public string SecondaryDeveloper { get; set; }
         public string Dbmaster { get; set; }
         public string CreatorId { get; set; }
+        public bool? SaleaderRequired { get; set; }
+        public bool? DirectorRequired { get; set; }
     }
 }

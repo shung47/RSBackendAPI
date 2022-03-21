@@ -83,6 +83,8 @@ namespace CDBAAPI.Models
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
+                entity.Property(e => e.SaleaderRequired).HasColumnName("SALeaderRequired");
+
                 entity.Property(e => e.SecondaryCodeReviewer)
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -109,7 +111,7 @@ namespace CDBAAPI.Models
 
             modelBuilder.Entity<TblTicketComment>(entity =>
             {
-                entity.ToTable("TblTicket_Comments");
+                entity.ToTable("tblTicket_Comments");
 
                 entity.Property(e => e.Id).HasColumnName("ID");
 
@@ -220,7 +222,7 @@ namespace CDBAAPI.Models
 
             modelBuilder.Entity<TblTicketModifiedTable>(entity =>
             {
-                entity.ToTable("TblTicket_ModifiedTables");
+                entity.ToTable("tblTicket_ModifiedTables");
 
                 entity.Property(e => e.Id).HasColumnName("ID");
 
