@@ -51,7 +51,8 @@ namespace CDBAAPI.Controllers
                 {".csv", "text/csv"},
                 {".pptx","application/vnd.openxmlformats-officedocument.presentationml.presentation" },
                 {".ppt","application/vnd.ms-powerpoint" },
-                {".zip", "application/zip" }
+                {".zip", "application/zip" },
+                {".msg", "application/vnd.ms-outlook"}
         };
 
         public TicketsController(DevContext devContext, IMapper mapper, IConfiguration configuration, IWebHostEnvironment env)
