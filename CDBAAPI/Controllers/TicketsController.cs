@@ -32,7 +32,7 @@ namespace CDBAAPI.Controllers
         private readonly IMapper _mapper;
         private readonly IConfiguration Configuration;
         private readonly string _folder;
-        public IWebHostEnvironment CurrentEnvironment { get; set; }
+        public IWebHostEnvironment CurrentEnvironment { get; set; }      
 
         private readonly static Dictionary<string, string> _contentTypes = new Dictionary<string, string>
         {
@@ -77,7 +77,6 @@ namespace CDBAAPI.Controllers
             {
                 foreach (var ticket in tickets.ToList())
                 {
-                    var records = _devContext.TblTicketLogs.Where(x => x.TicketId == ticket.Id);
                     TicketExtension t = _mapper.Map<TicketExtension>(ticket);
                     if(!string.IsNullOrEmpty(ticket.Assignee))
                         t.AssigneeName = tblUser.Where(x => x.EmployeeId == ticket.Assignee).FirstOrDefault().Name;
@@ -93,47 +92,12 @@ namespace CDBAAPI.Controllers
                         t.PrimaryCodeReviewerName = tblUser.Where(x => x.EmployeeId == t.PrimaryCodeReviewer).FirstOrDefault().Name;
                     if (!string.IsNullOrEmpty(ticket.SecondaryCodeReviewer))
                         t.SecondaryCodeReviewerName = tblUser.Where(x => x.EmployeeId == t.SecondaryCodeReviewer).FirstOrDefault().Name;
-                    
-                    t.BusinessApproval = "Pending";
-                    t.PrimaryCodeApproval = "Pending";
-                    t.DirectorApproval = "Pending";
-                    t.SALeaderApproval = "Pending";
-                    t.SecondaryCodeApproval = "Pending";
-                    if (records.Count() > 0)
-                    {
-                        foreach (TblTicketLog record in records)
-                        {
-                            if (!record.IsDeleted && record.ApprovalType == "businessApproval")
-                            {
-                                t.BusinessApproval = record.Action;
-                                t.BusinessApprovalTime = record.ModificationDatetime;
-                            }
-
-                            if (!record.IsDeleted && record.ApprovalType == "primaryCodeApproval")
-                            {
-                                t.PrimaryCodeApproval = record.Action;
-                                t.PrimaryCodeApprovalTime = record.ModificationDatetime;
-                            }
-
-                            if (!record.IsDeleted && record.ApprovalType == "secondaryCodeApproval")
-                            {
-                                t.SecondaryCodeApproval = record.Action;
-                                t.SecondaryCodeApprovalTime = record.ModificationDatetime;
-                            }
-
-                            if (!record.IsDeleted && record.ApprovalType == "directorApproval")
-                            {
-                                t.DirectorApproval = record.Action;
-                                t.DirectorApprovalTime = record.ModificationDatetime;
-                            }
-
-                            if (!record.IsDeleted && record.ApprovalType == "saLeaderApproval")
-                            {
-                                t.SALeaderApproval = record.Action;
-                                t.SALeaderApprovalTime = record.ModificationDatetime;
-                            }
-                        }
-                    }
+                                      
+                    t.BusinessApproval = EnumTypes.ApprovalStatus.Pending.ToString();
+                    t.PrimaryCodeApproval = EnumTypes.ApprovalStatus.Pending.ToString();
+                    t.DirectorApproval = EnumTypes.ApprovalStatus.Pending.ToString();
+                    t.SALeaderApproval = EnumTypes.ApprovalStatus.Pending.ToString();
+                    t.SecondaryCodeApproval = EnumTypes.ApprovalStatus.Pending.ToString();
 
                     if(t.TaskId!=null)
                         t.TaskName = tasks.Where(x => x.Id == t.TaskId).FirstOrDefault().TaskName;
@@ -165,49 +129,49 @@ namespace CDBAAPI.Controllers
             var creator = _devContext.TblTicketUsers.Where(x => x.EmployeeId == ticket.CreatorId.ToString()).FirstOrDefault();
             if (result != null)
             {
-                result.BusinessApproval = "Pending";
-                result.PrimaryCodeApproval = "Pending";
-                result.DirectorApproval = "Pending";
-                result.SALeaderApproval = "Pending";
-                result.SecondaryCodeApproval = "Pending";
-                result.DbMasterApproval = "Pending";
+                result.BusinessApproval = EnumTypes.ApprovalStatus.Pending.ToString();
+                result.PrimaryCodeApproval = EnumTypes.ApprovalStatus.Pending.ToString();
+                result.DirectorApproval = EnumTypes.ApprovalStatus.Pending.ToString();
+                result.SALeaderApproval = EnumTypes.ApprovalStatus.Pending.ToString();
+                result.SecondaryCodeApproval = EnumTypes.ApprovalStatus.Pending.ToString();
+                result.DbMasterApproval = EnumTypes.ApprovalStatus.Pending.ToString();
 
                 var records = _devContext.TblTicketLogs.Where(x => x.TicketId == Id);
                 if (records.Count() > 0)
                 {
                     foreach (TblTicketLog record in records)
                     {
-                        if (!record.IsDeleted && record.ApprovalType == "businessApproval")
+                        if (!record.IsDeleted && record.ApprovalType == EnumTypes.ApprovalTypes.businessApproval.ToString())
                         {
                             result.BusinessApproval = record.Action;
                             result.BusinessApprovalTime = record.ModificationDatetime;
                         }
 
-                        if (!record.IsDeleted && record.ApprovalType == "primaryCodeApproval")
+                        if (!record.IsDeleted && record.ApprovalType == EnumTypes.ApprovalTypes.primaryCodeApproval.ToString())
                         {
                             result.PrimaryCodeApproval = record.Action;
                             result.PrimaryCodeApprovalTime = record.ModificationDatetime;
                         }
 
-                        if (!record.IsDeleted && record.ApprovalType == "secondaryCodeApproval")
+                        if (!record.IsDeleted && record.ApprovalType == EnumTypes.ApprovalTypes.secondaryCodeApproval.ToString())
                         {
                             result.SecondaryCodeApproval = record.Action;
                             result.SecondaryCodeApprovalTime = record.ModificationDatetime;
                         }
 
-                        if (!record.IsDeleted && record.ApprovalType == "directorApproval")
+                        if (!record.IsDeleted && record.ApprovalType == EnumTypes.ApprovalTypes.directorApproval.ToString())
                         {
                             result.DirectorApproval = record.Action;
                             result.DirectorApprovalTime = record.ModificationDatetime;
                         }
 
-                        if (!record.IsDeleted && record.ApprovalType == "saLeaderApproval")
+                        if (!record.IsDeleted && record.ApprovalType == EnumTypes.ApprovalTypes.saLeaderApproval.ToString())
                         {
                             result.SALeaderApproval = record.Action;
                             result.SALeaderApprovalTime = record.ModificationDatetime;
                         }
 
-                        if (!record.IsDeleted && record.ApprovalType == "dbApproval")
+                        if (!record.IsDeleted && record.ApprovalType == EnumTypes.ApprovalTypes.dbApproval.ToString())
                         {
                             result.DbMasterApproval = record.Action;
                             result.DbMasterApprovalTime = record.ModificationDatetime;
@@ -234,6 +198,13 @@ namespace CDBAAPI.Controllers
 
             var result = _mapper.Map<List<TicketExtension>>(tickets);
 
+            var tblUser = _devContext.TblTicketUsers;
+
+            foreach(var ticket in result)
+            {
+                ticket.AssigneeName = tblUser.Where(x => x.EmployeeId == ticket.Assignee).FirstOrDefault().Name;
+            }
+            
             return Ok(result);
         }
 
@@ -255,7 +226,7 @@ namespace CDBAAPI.Controllers
                 Title = value.Title,
                 Type = value.Type,
                 Description = value.Description,
-                Status = "OnHold",
+                Status = EnumTypes.TicketStatus.OnHold.ToString(),
                 Assignee = value.Assignee,
                 Developer = value.Developer,
                 SecondaryDeveloper = value.SecondaryDeveloper,
@@ -298,21 +269,21 @@ namespace CDBAAPI.Controllers
             {
                 return NotFound("This ticket name is already exist");
             }
-            if (value.Status == "Reviewing")
+            if (value.Status == EnumTypes.TicketStatus.Reviewing.ToString())
             {
-                if(!(value.Type=="Incident"||value.Type== "CYSpecialApproval") && string.IsNullOrEmpty(value.PrimaryCodeReviewer) && (ticket.Status == "UnderDevelopment"||ticket.Status == "OnHold"))
+                if(!(value.Type==EnumTypes.TicketTypes.Incident.ToString()||value.Type== EnumTypes.TicketTypes.CYSpecialApproval.ToString()) && string.IsNullOrEmpty(value.PrimaryCodeReviewer) && (ticket.Status == EnumTypes.TicketStatus.UnderDevelopment.ToString() || ticket.Status == EnumTypes.TicketStatus.OnHold.ToString()))
                 {
                     AutoSendEmail("AssignCodeReviewer", "SALeader", ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
                     ticket.SaleaderRequired = true;
                 }
 
-                if(value.Type=="Incident" && (ticket.Status=="UnderDevelopment"||ticket.Status=="OnHold"))
+                if(value.Type== EnumTypes.TicketTypes.Incident.ToString() && (ticket.Status== EnumTypes.TicketStatus.UnderDevelopment.ToString() || ticket.Status== EnumTypes.TicketStatus.OnHold.ToString()))
                 {
                     AutoSendEmail("SALeaderReminder", "SALeader", ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
                     ticket.SaleaderRequired = true;
                 }
 
-                if (ticket.Type == "CYSpecialApproval" && (ticket.Status == "UnderDevelopment"|| ticket.Status =="OnHold"))
+                if (ticket.Type == EnumTypes.TicketTypes.CYSpecialApproval.ToString() && (ticket.Status == EnumTypes.TicketStatus.UnderDevelopment.ToString() || ticket.Status == EnumTypes.TicketStatus.OnHold.ToString()))
                 {
                     AutoSendEmail("DirectorApproval", "Director", ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
                     ticket.DirectorRequired = true;
@@ -338,17 +309,17 @@ namespace CDBAAPI.Controllers
 
             }
 
-            if (ticket.Status=="Completed")
+            if (ticket.Status== EnumTypes.TicketStatus.Completed.ToString())
             {
                 return NotFound("You can't modify a completed ticket");
             }
 
-            if(ticket.Status=="Reviewing"&&(value.Status=="UnderDevelopment"||value.Status=="OnHold"))
+            if(ticket.Status== EnumTypes.TicketStatus.Reviewing.ToString() && (value.Status== EnumTypes.TicketStatus.UnderDevelopment.ToString() || value.Status== EnumTypes.TicketStatus.OnHold.ToString()))
             {
                 return NotFound("You can't change a reviewing ticket back to the previous status");
             }
 
-            if (value.Status == "Completed")
+            if (value.Status == EnumTypes.TicketStatus.Completed.ToString())
             {
 
                 var ticketlogs = _devContext.TblTicketLogs.Where(x => x.TicketId == Id && x.IsDeleted == false && (x.Action == "Approved"||x.Action=="Completed"));
@@ -365,17 +336,17 @@ namespace CDBAAPI.Controllers
                     }
                 }
 
-                if (value.Type != "Incident" && value.BusinessReview && !ticketlogs.Any(X => X.ApprovalType == "businessApproval"))
+                if (value.Type != EnumTypes.TicketTypes.Incident.ToString() && value.BusinessReview && !ticketlogs.Any(X => X.ApprovalType == "businessApproval"))
                 {
                     return NotFound("Can't save the ticket. It requires a business approval");
                 }
 
-                if (value.Type != "Incident" && !ticketlogs.Any(x => x.ApprovalType == "primaryCodeApproval"))
+                if (value.Type != EnumTypes.TicketTypes.Incident.ToString() && !ticketlogs.Any(x => x.ApprovalType == "primaryCodeApproval"))
                 {
                     return NotFound("Can't save the ticket. It requires a code review approval");
                 }
 
-                if (value.Type != "Incident" && !string.IsNullOrEmpty(value.SecondaryCodeReviewer) && !ticketlogs.Any(x => x.ApprovalType == "secondaryCodeApproval"))
+                if (value.Type != EnumTypes.TicketTypes.Incident.ToString() && !string.IsNullOrEmpty(value.SecondaryCodeReviewer) && !ticketlogs.Any(x => x.ApprovalType == "secondaryCodeApproval"))
                 {
                     return NotFound("Can't save the ticket. It requires a secondary code review approval");
                 }
@@ -385,7 +356,7 @@ namespace CDBAAPI.Controllers
                     return NotFound("Can't save the ticket. It requires a SA master approval");
                 }
 
-                if (value.Type == "Project" && !ticketlogs.Any(x => x.ApprovalType == "directorApproval"))
+                if (value.Type == EnumTypes.TicketTypes.Project.ToString() && !ticketlogs.Any(x => x.ApprovalType == "directorApproval"))
                 {
                     return NotFound("Can't save the ticket. It requires CY approval");
                 }
@@ -649,7 +620,7 @@ namespace CDBAAPI.Controllers
                 _devContext.SaveChanges();
                 var allRecords = _devContext.TblTicketLogs.Where(x => x.TicketId == Id && x.IsDeleted == false);
 
-                if (ticketlog.ApprovalType == "businessApproval" && ticketlog.Action == "Approved")
+                if (ticketlog.ApprovalType == EnumTypes.ApprovalTypes.businessApproval.ToString() && ticketlog.Action == "Approved")
                 {
                     if(string.IsNullOrEmpty(ticket.BusinessReviewer))
                     {
@@ -660,7 +631,7 @@ namespace CDBAAPI.Controllers
 
                     if (string.IsNullOrEmpty(ticket.SecondaryCodeReviewer))
                     {
-                        if (allRecords.Any(x => x.ApprovalType == "primaryCodeApproval" && x.Action == "Approved"))
+                        if (allRecords.Any(x => x.ApprovalType == EnumTypes.ApprovalTypes.primaryCodeApproval.ToString() && x.Action == "Approved"))
                         {
                             AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                             ticket.SaleaderRequired = true;
@@ -668,14 +639,14 @@ namespace CDBAAPI.Controllers
                     }
                     else
                     {
-                        if (allRecords.Any(x => x.ApprovalType == "primaryCodeApproval" && x.Action == "Approved") && allRecords.Any(x => x.ApprovalType == "secondaryCodeApproval"&& x.Action == "Approved"))
+                        if (allRecords.Any(x => x.ApprovalType == EnumTypes.ApprovalTypes.primaryCodeApproval.ToString() && x.Action == "Approved") && allRecords.Any(x => x.ApprovalType == "secondaryCodeApproval"&& x.Action == "Approved"))
                         {
                             AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                             ticket.SaleaderRequired = true;
                         }
                     }
                 }
-                else if (ticketlog.ApprovalType == "primaryCodeApproval" && ticketlog.Action=="Approved")
+                else if (ticketlog.ApprovalType == EnumTypes.ApprovalTypes.primaryCodeApproval.ToString() && ticketlog.Action=="Approved")
                 {
                     if (string.IsNullOrEmpty(ticket.PrimaryCodeReviewer))
                     {
@@ -685,7 +656,7 @@ namespace CDBAAPI.Controllers
 
                     if (string.IsNullOrEmpty(ticket.SecondaryCodeReviewer))
                     {
-                        if (allRecords.Any(x => x.ApprovalType == "businessApproval" && x.Action == "Approved"))
+                        if (allRecords.Any(x => x.ApprovalType == EnumTypes.ApprovalTypes.businessApproval.ToString() && x.Action == "Approved"))
                         {
                             AutoSendEmail("SALeaderReminder", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                             ticket.SaleaderRequired = true;
@@ -693,14 +664,14 @@ namespace CDBAAPI.Controllers
                     }
                     else
                     {
-                        if (allRecords.Any(x => x.ApprovalType == "businessApproval"&&x.Action=="Approved") && allRecords.Any(x => x.ApprovalType == "secondaryCodeApproval"&&x.Action=="Approved"))
+                        if (allRecords.Any(x => x.ApprovalType == EnumTypes.ApprovalTypes.businessApproval.ToString() && x.Action=="Approved") && allRecords.Any(x => x.ApprovalType == "secondaryCodeApproval"&&x.Action=="Approved"))
                         {
                             AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                             ticket.SaleaderRequired = true;
                         }
                     }
                 }
-                else if (ticketlog.ApprovalType == "secondaryCodeApproval" && ticketlog.Action == "Approved")
+                else if (ticketlog.ApprovalType == EnumTypes.ApprovalTypes.secondaryCodeApproval.ToString() && ticketlog.Action == "Approved")
                 {
                     if (string.IsNullOrEmpty(ticket.SecondaryCodeReviewer))
                     {
@@ -709,18 +680,18 @@ namespace CDBAAPI.Controllers
 
                     AutoSendEmail("CodeApproved", ticket.Assignee, ticket.SecondaryCodeReviewer, ticket.CreatorId, ticket.Id, ticket.Title);
 
-                    if (allRecords.Any(x => x.ApprovalType == "businessApproval" && x.Action == "Approved") && allRecords.Any(x => x.ApprovalType == "primaryCodeApproval" && x.Action == "Approved"))
+                    if (allRecords.Any(x => x.ApprovalType == EnumTypes.ApprovalTypes.businessApproval.ToString() && x.Action == "Approved") && allRecords.Any(x => x.ApprovalType == EnumTypes.ApprovalTypes.primaryCodeApproval.ToString() && x.Action == "Approved"))
                     {
                         AutoSendEmail("SALeaderReminder", "SALeader", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                         ticket.SaleaderRequired = true;
                     }
                 }
-                else if (ticketlog.ApprovalType == "saLeaderApproval" && ticketlog.Action == "Approved")
+                else if (ticketlog.ApprovalType == EnumTypes.ApprovalTypes.saLeaderApproval.ToString() && ticketlog.Action == "Approved")
                 {
                     AutoSendEmail("SALeaderApproved", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                     ticket.SaleaderRequired = false;
 
-                    if (ticket.Type == "Project")
+                    if (ticket.Type == EnumTypes.TicketTypes.Project.ToString())
                     {
                         AutoSendEmail("DirectorReminder", "Director", ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                         ticket.DirectorRequired = true;
@@ -731,14 +702,14 @@ namespace CDBAAPI.Controllers
                             AutoSendEmail("SAMasterReminder", ticket.Dbmaster, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                     }
                 }
-                else if (ticketlog.ApprovalType == "directorApproval" && ticketlog.Action == "Approved")
+                else if (ticketlog.ApprovalType == EnumTypes.ApprovalTypes.directorApproval.ToString() && ticketlog.Action == "Approved")
                 {
                     AutoSendEmail("DirectorApproved", ticket.Assignee, "Director", ticket.CreatorId, ticket.Id, ticket.Title);
                     ticket.DirectorRequired = false;
                     if (!string.IsNullOrEmpty(ticket.Dbmaster))
                         AutoSendEmail("SAMasterReminder", ticket.Dbmaster, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                 }
-                else if (ticketlog.ApprovalType == "dbApproval" && ticketlog.Action == "Completed")
+                else if (ticketlog.ApprovalType == EnumTypes.ApprovalTypes.dbApproval.ToString() && ticketlog.Action == "Completed")
                 {
                     AutoSendEmail("SAMasterCompleted", ticket.Assignee, ticket.Dbmaster, ticket.CreatorId, ticket.Id, ticket.Title);
                 }
@@ -1323,7 +1294,7 @@ namespace CDBAAPI.Controllers
             updateTicket.TaskId = value.TaskId;
             updateTicket.Dbmaster = value.Dbmaster;
 
-            if (value.Status=="Completed")
+            if (value.Status== EnumTypes.TicketStatus.Completed.ToString())
             {
                 updateTicket.CompletedDateTime = DateTime.Now;
             }

@@ -12,5 +12,6 @@ namespace CDBAAPI.Models
         public string EmployeeId { get; set; }
         public string Name { get; set; }
         public string Team { get; set; }
+        public bool InActive { get; set; }
     }
 }

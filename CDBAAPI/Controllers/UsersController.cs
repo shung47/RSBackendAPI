@@ -34,18 +34,43 @@ namespace CDBAAPI.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<TblUser>> Get()
         {
-            var result = _devContext.TblTicketUsers;
-            //var result = User.Claims.ToList().First().Value;
+            var users = _devContext.TblTicketUsers;
+
+            var loginInfo = _devContext.TblTicketLoginInfos;
+
+            var result = new List<TblUser>();
+            foreach (var user in users)
+            {
+                var userInfo = loginInfo.Where(x => x.Id == user.EmployeeId).FirstOrDefault();
+                bool isInActive = false;
+                if (userInfo.Inactive == "Y")
+                {
+                    isInActive = true;
+                }
+
+                var tblUser = new TblUser
+                {
+                    Id = user.Id,
+                    Password = user.Password,
+                    EmployeeId = user.EmployeeId,
+                    Name = user.Name,
+                    Team = user.Team,
+                    InActive = isInActive
+                };
+                result.Add(tblUser);             
+            }
+
             return Ok(result.OrderBy(x=>x.Name));
         }
 
         [HttpGet("SA")]
         public ActionResult<IEnumerable<TblUser>>GetSA()
         {
-            var loginInfo = _devContext.TblTicketLoginInfos.Where(x => x.Samaster == "Y");
+            var loginInfo = _devContext.TblTicketLoginInfos.Where(x => x.Samaster == "Y"&&x.Inactive!="Y");
             List<TblUser> result = new List<TblUser>();
             foreach(var user in loginInfo)
             {
+                
                 TblUser u = new TblUser()
                 {
                     Name = user.Name,
