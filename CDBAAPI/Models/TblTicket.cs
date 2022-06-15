@@ -29,5 +29,6 @@ namespace CDBAAPI.Models
         public string CreatorId { get; set; }
         public bool? SaleaderRequired { get; set; }
         public bool? DirectorRequired { get; set; }
+        public string NotificationList { get; set; }
     }
 }

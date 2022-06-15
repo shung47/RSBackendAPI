@@ -14,5 +14,8 @@ namespace CDBAAPI.Models
         public string LoginName { get; set; }
         public string CanCreateTask { get; set; }
         public string Samaster { get; set; }
+        public string Email { get; set; }
+        public string PersonalEmail { get; set; }
+        public string GeneralAlert { get; set; }
     }
 }

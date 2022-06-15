@@ -79,6 +79,10 @@ namespace CDBAAPI.Models
 
                 entity.Property(e => e.LastModificationDateTime).HasColumnType("datetime");
 
+                entity.Property(e => e.NotificationList)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.PrimaryCodeReviewer)
                     .HasMaxLength(50)
                     .IsUnicode(false);
@@ -190,6 +194,14 @@ namespace CDBAAPI.Models
                     .HasMaxLength(1)
                     .IsUnicode(false);
 
+                entity.Property(e => e.Email)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.GeneralAlert)
+                    .HasMaxLength(1)
+                    .IsFixedLength(true);
+
                 entity.Property(e => e.Id)
                     .IsRequired()
                     .HasMaxLength(11)
@@ -208,6 +220,11 @@ namespace CDBAAPI.Models
                     .IsRequired()
                     .HasMaxLength(50)
                     .IsUnicode(false);
+
+                entity.Property(e => e.PersonalEmail)
+                    .HasMaxLength(100)
+                    .IsUnicode(false)
+                    .HasColumnName("Personal Email");
 
                 entity.Property(e => e.Samaster)
                     .HasMaxLength(1)

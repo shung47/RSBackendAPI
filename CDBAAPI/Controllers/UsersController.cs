@@ -99,7 +99,7 @@ namespace CDBAAPI.Controllers
         public IActionResult Post([FromBody] TblUser value)
         {
             var users = _devContext.TblTicketUsers.Where(a => a.EmployeeId==value.EmployeeId);
-            var validEmployees  = _devContext.TblTicketLoginInfos.Where(a=>a.Inactive == null && (a.Team == "HK"|| a.Team == "TW" || a.Team == "SG" || a.Team == "CN"));
+            var validEmployees  = _devContext.TblTicketLoginInfos.Where(a=>a.Inactive == null);
 
             if(users.Count()>0)
             {

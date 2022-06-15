@@ -323,8 +323,9 @@ namespace CDBAAPI.Controllers
             {
 
                 var ticketlogs = _devContext.TblTicketLogs.Where(x => x.TicketId == Id && x.IsDeleted == false && (x.Action == "Approved"||x.Action=="Completed"));
+                ticket.SaleaderRequired = false;
 
-                if(value.Type == "CYSpecialApproval")
+                if (value.Type == "CYSpecialApproval")
                 {
                     if(ticketlogs.Any(x => x.ApprovalType == "directorApproval"))
                     {
@@ -379,6 +380,10 @@ namespace CDBAAPI.Controllers
             {
                 try
                 {
+                    if(value.Status == EnumTypes.TicketStatus.Cancelled.ToString())
+                    {
+                        ticket.SaleaderRequired = false;
+                    }
                     UpdateTicket(Id, value);
                     return Ok();
                 }
@@ -608,7 +613,7 @@ namespace CDBAAPI.Controllers
                 IsDeleted = false,
                 ApprovalType = value.ApprovalType
             };
-
+            List<string> notifiedUsers = ticket.NotificationList.Split(',').ToList();
             try
             {
                 var records = _devContext.TblTicketLogs.Where(x => x.TicketId == Id && x.ApprovalType == value.ApprovalType);
@@ -626,7 +631,7 @@ namespace CDBAAPI.Controllers
                     {
                         return NotFound("Please save the ticket before you approve the ticket");
                     }
-                    AutoSendEmail("BusinessApproved", ticket.Assignee, ticket.BusinessReviewer, ticket.CreatorId, ticket.Id, ticket.Title);
+                    AutoSendEmail("BusinessApproved", ticket.Assignee, ticket.BusinessReviewer, ticket.CreatorId, ticket.Id, ticket.Title, notifiedUsers);
 
 
                     if (string.IsNullOrEmpty(ticket.SecondaryCodeReviewer))
@@ -652,7 +657,7 @@ namespace CDBAAPI.Controllers
                     {
                         return NotFound("Please save the ticket before you approve the ticket");
                     }
-                    AutoSendEmail("CodeApproved", ticket.Assignee, ticket.PrimaryCodeReviewer, ticket.CreatorId, ticket.Id, ticket.Title);
+                    AutoSendEmail("CodeApproved", ticket.Assignee, ticket.PrimaryCodeReviewer, ticket.CreatorId, ticket.Id, ticket.Title, notifiedUsers);
 
                     if (string.IsNullOrEmpty(ticket.SecondaryCodeReviewer))
                     {
@@ -678,7 +683,7 @@ namespace CDBAAPI.Controllers
                         return NotFound("Please save the ticket before you approve the ticket");
                     }
 
-                    AutoSendEmail("CodeApproved", ticket.Assignee, ticket.SecondaryCodeReviewer, ticket.CreatorId, ticket.Id, ticket.Title);
+                    AutoSendEmail("CodeApproved", ticket.Assignee, ticket.SecondaryCodeReviewer, ticket.CreatorId, ticket.Id, ticket.Title, notifiedUsers);
 
                     if (allRecords.Any(x => x.ApprovalType == EnumTypes.ApprovalTypes.businessApproval.ToString() && x.Action == "Approved") && allRecords.Any(x => x.ApprovalType == EnumTypes.ApprovalTypes.primaryCodeApproval.ToString() && x.Action == "Approved"))
                     {
@@ -704,14 +709,14 @@ namespace CDBAAPI.Controllers
                 }
                 else if (ticketlog.ApprovalType == EnumTypes.ApprovalTypes.directorApproval.ToString() && ticketlog.Action == "Approved")
                 {
-                    AutoSendEmail("DirectorApproved", ticket.Assignee, "Director", ticket.CreatorId, ticket.Id, ticket.Title);
+                    AutoSendEmail("DirectorApproved", ticket.Assignee, "Director", ticket.CreatorId, ticket.Id, ticket.Title, notifiedUsers);
                     ticket.DirectorRequired = false;
                     if (!string.IsNullOrEmpty(ticket.Dbmaster))
                         AutoSendEmail("SAMasterReminder", ticket.Dbmaster, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
                 }
                 else if (ticketlog.ApprovalType == EnumTypes.ApprovalTypes.dbApproval.ToString() && ticketlog.Action == "Completed")
                 {
-                    AutoSendEmail("SAMasterCompleted", ticket.Assignee, ticket.Dbmaster, ticket.CreatorId, ticket.Id, ticket.Title);
+                    AutoSendEmail("SAMasterCompleted", ticket.Assignee, ticket.Dbmaster, ticket.CreatorId, ticket.Id, ticket.Title, notifiedUsers);
                 }
                 else
                 {
@@ -720,7 +725,7 @@ namespace CDBAAPI.Controllers
                 _devContext.SaveChanges();
                 return Ok(ticketlog);
 
-                 void AutoSendEmail(string emailType, string receiver, string assignee, string creator, int id, string ticketName)
+                 void AutoSendEmail(string emailType, string receiver, string assignee, string creator, int id, string ticketName, List<string> notifiedUsers =null)
                 {
                     var mailMessage = new MimeMessage();
 
@@ -777,6 +782,15 @@ namespace CDBAAPI.Controllers
                                 "\n\nBest regards," +
                                 "\nCDBA Team"
                             };
+
+                            if(!string.IsNullOrEmpty(notifiedUsers.First()))
+                            {
+                                foreach(string notifiedUser in notifiedUsers)
+                                {
+                                    mailMessage.Cc.Add(new MailboxAddress(notifiedUser + "@avnet.com"));
+                                }
+                            }
+
                             using (var smtpClient = new SmtpClient())
                             {
                                 smtpClient.Connect("Smtprelay.avnet.com", 25, false);
@@ -798,6 +812,13 @@ namespace CDBAAPI.Controllers
                                 "\n\nBest regards," +
                                 "\nCDBA Team"
                             };
+                            if (string.IsNullOrEmpty(notifiedUsers.First()))
+                            {
+                                foreach (string notifiedUser in notifiedUsers)
+                                {
+                                    mailMessage.Cc.Add(new MailboxAddress(notifiedUser + "@avnet.com"));
+                                }
+                            }
                             using (var smtpClient = new SmtpClient())
                             {
                                 smtpClient.Connect("Smtprelay.avnet.com", 25, false);
@@ -842,6 +863,13 @@ namespace CDBAAPI.Controllers
                                 "\n\nBest regards," +
                                 "\nCDBA Team"
                             };
+                            if (string.IsNullOrEmpty(notifiedUsers.First()))
+                            {
+                                foreach (string notifiedUser in notifiedUsers)
+                                {
+                                    mailMessage.Cc.Add(new MailboxAddress(notifiedUser + "@avnet.com"));
+                                }
+                            }
                             using (var smtpClient = new SmtpClient())
                             {
                                 smtpClient.Connect("Smtprelay.avnet.com", 25, false);
@@ -886,6 +914,13 @@ namespace CDBAAPI.Controllers
                                 "\n\nBest regards," +
                                 "\nCDBA Team"
                             };
+                            if (string.IsNullOrEmpty(notifiedUsers.First()))
+                            {
+                                foreach (string notifiedUser in notifiedUsers)
+                                {
+                                    mailMessage.Cc.Add(new MailboxAddress(notifiedUser + "@avnet.com"));
+                                }
+                            }
                             using (var smtpClient = new SmtpClient())
                             {
                                 smtpClient.Connect("Smtprelay.avnet.com", 25, false);
@@ -928,6 +963,13 @@ namespace CDBAAPI.Controllers
                                 "\n\nBest regards," +
                                 "\nCDBA Team"
                             };
+                            if (string.IsNullOrEmpty(notifiedUsers.First()))
+                            {
+                                foreach (string notifiedUser in notifiedUsers)
+                                {
+                                    mailMessage.Cc.Add(new MailboxAddress(notifiedUser + "@avnet.com"));
+                                }
+                            }
                             using (var smtpClient = new SmtpClient())
                             {
                                 smtpClient.Connect("Smtprelay.avnet.com", 25, false);
@@ -1293,6 +1335,7 @@ namespace CDBAAPI.Controllers
             updateTicket.SecondaryCodeReviewer = value.SecondaryCodeReviewer;
             updateTicket.TaskId = value.TaskId;
             updateTicket.Dbmaster = value.Dbmaster;
+            updateTicket.NotificationList = value.NotificationList;
 
             if (value.Status== EnumTypes.TicketStatus.Completed.ToString())
             {
