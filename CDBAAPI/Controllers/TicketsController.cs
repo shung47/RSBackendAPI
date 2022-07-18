@@ -271,35 +271,44 @@ namespace CDBAAPI.Controllers
             }
             if (value.Status == EnumTypes.TicketStatus.Reviewing.ToString())
             {
-                if(!(value.Type==EnumTypes.TicketTypes.Incident.ToString()||value.Type== EnumTypes.TicketTypes.CYSpecialApproval.ToString()) && string.IsNullOrEmpty(value.PrimaryCodeReviewer) && (ticket.Status == EnumTypes.TicketStatus.UnderDevelopment.ToString() || ticket.Status == EnumTypes.TicketStatus.OnHold.ToString()))
+                //Require to assign business reviewer
+                if (!(value.Type.ToString() == EnumTypes.TicketTypes.Incident.ToString() || value.Type.ToString() == EnumTypes.TicketTypes.CYSpecialApproval.ToString()) && string.IsNullOrEmpty(value.BusinessReviewer)) 
+                {
+                    return NotFound("Please assign a business reviewer");
+                }
+
+                //Require to assign code reviewer
+                if (!(value.Type==EnumTypes.TicketTypes.Incident.ToString()||value.Type== EnumTypes.TicketTypes.CYSpecialApproval.ToString()) && string.IsNullOrEmpty(value.PrimaryCodeReviewer) && (ticket.Status == EnumTypes.TicketStatus.UnderDevelopment.ToString() || ticket.Status == EnumTypes.TicketStatus.OnHold.ToString()))
                 {
                     AutoSendEmail("AssignCodeReviewer", "SALeader", ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
                     ticket.SaleaderRequired = true;
                 }
 
+                //Require SA leader to approve for incident
                 if(value.Type== EnumTypes.TicketTypes.Incident.ToString() && (ticket.Status== EnumTypes.TicketStatus.UnderDevelopment.ToString() || ticket.Status== EnumTypes.TicketStatus.OnHold.ToString()))
                 {
                     AutoSendEmail("SALeaderReminder", "SALeader", ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
                     ticket.SaleaderRequired = true;
                 }
 
+                //Require director approval
                 if (ticket.Type == EnumTypes.TicketTypes.CYSpecialApproval.ToString() && (ticket.Status == EnumTypes.TicketStatus.UnderDevelopment.ToString() || ticket.Status == EnumTypes.TicketStatus.OnHold.ToString()))
                 {
                     AutoSendEmail("DirectorApproval", "Director", ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
                     ticket.DirectorRequired = true;
                 }
-
+                //send appointing notification 
                 if (ticket.BusinessReviewer != value.BusinessReviewer && !string.IsNullOrEmpty(value.BusinessReviewer))
                 {
                     AutoSendEmail("AppointBusinessReviewer", value.BusinessReviewer, ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
                 }
-
+                //send appointing notification
                 if (ticket.PrimaryCodeReviewer != value.PrimaryCodeReviewer && !string.IsNullOrEmpty(value.PrimaryCodeReviewer))
                 {
                     AutoSendEmail("AppointPrimaryCodeReviewer", value.PrimaryCodeReviewer, ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
                     ticket.SaleaderRequired = false;
                 }
-
+                //send appointing notification
                 if (ticket.SecondaryCodeReviewer != value.SecondaryCodeReviewer && !string.IsNullOrEmpty(value.SecondaryCodeReviewer))
                 {
                     AutoSendEmail("AppointSecondaryCodeReviewer", value.SecondaryCodeReviewer, ticket.CreatorId, ticket.Assignee, ticket.Id, ticket.Title);
@@ -613,7 +622,12 @@ namespace CDBAAPI.Controllers
                 IsDeleted = false,
                 ApprovalType = value.ApprovalType
             };
-            List<string> notifiedUsers = ticket.NotificationList.Split(',').ToList();
+            List<string> notifiedUsers = new List<string>();
+
+            if (!string.IsNullOrEmpty(ticket.NotificationList))
+            {
+                notifiedUsers = ticket.NotificationList.Split(',').ToList();
+            }
             try
             {
                 var records = _devContext.TblTicketLogs.Where(x => x.TicketId == Id && x.ApprovalType == value.ApprovalType);
@@ -693,7 +707,7 @@ namespace CDBAAPI.Controllers
                 }
                 else if (ticketlog.ApprovalType == EnumTypes.ApprovalTypes.saLeaderApproval.ToString() && ticketlog.Action == "Approved")
                 {
-                    AutoSendEmail("SALeaderApproved", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title);
+                    AutoSendEmail("SALeaderApproved", ticket.Assignee, ticket.Assignee, ticket.CreatorId, ticket.Id, ticket.Title, notifiedUsers);
                     ticket.SaleaderRequired = false;
 
                     if (ticket.Type == EnumTypes.TicketTypes.Project.ToString())
@@ -783,7 +797,7 @@ namespace CDBAAPI.Controllers
                                 "\nCDBA Team"
                             };
 
-                            if(!string.IsNullOrEmpty(notifiedUsers.First()))
+                            if(notifiedUsers != null)
                             {
                                 foreach(string notifiedUser in notifiedUsers)
                                 {
@@ -812,7 +826,7 @@ namespace CDBAAPI.Controllers
                                 "\n\nBest regards," +
                                 "\nCDBA Team"
                             };
-                            if (string.IsNullOrEmpty(notifiedUsers.First()))
+                            if (notifiedUsers != null)
                             {
                                 foreach (string notifiedUser in notifiedUsers)
                                 {
@@ -863,7 +877,7 @@ namespace CDBAAPI.Controllers
                                 "\n\nBest regards," +
                                 "\nCDBA Team"
                             };
-                            if (string.IsNullOrEmpty(notifiedUsers.First()))
+                            if (notifiedUsers!=null)
                             {
                                 foreach (string notifiedUser in notifiedUsers)
                                 {
@@ -914,7 +928,7 @@ namespace CDBAAPI.Controllers
                                 "\n\nBest regards," +
                                 "\nCDBA Team"
                             };
-                            if (string.IsNullOrEmpty(notifiedUsers.First()))
+                            if (notifiedUsers != null)
                             {
                                 foreach (string notifiedUser in notifiedUsers)
                                 {
@@ -963,7 +977,7 @@ namespace CDBAAPI.Controllers
                                 "\n\nBest regards," +
                                 "\nCDBA Team"
                             };
-                            if (string.IsNullOrEmpty(notifiedUsers.First()))
+                            if (notifiedUsers != null)
                             {
                                 foreach (string notifiedUser in notifiedUsers)
                                 {
@@ -1291,7 +1305,6 @@ namespace CDBAAPI.Controllers
             }
             memoryStream.Seek(0, SeekOrigin.Begin);
 
-            // 回傳檔案到 Client 需要附上 Content Type，否則瀏覽器會解析失敗。
             var x = _contentTypes[Path.GetExtension(path).ToLowerInvariant()];
             return File(memoryStream, x, fileName);
         }
